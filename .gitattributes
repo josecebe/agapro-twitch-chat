@@ -1,0 +1,2 @@
+# Preserve generated artifact bytes so the manifest hashes stay valid.
+dist/** -text

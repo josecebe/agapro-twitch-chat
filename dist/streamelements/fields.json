@@ -1,0 +1,500 @@
+{
+    "channelMode": {
+        "type": "dropdown",
+        "label": "Channel source",
+        "group": "Channels",
+        "value": "associated",
+        "options": {
+            "associated": "Associated overlay channel",
+            "custom": "Custom channels"
+        }
+    },
+    "customChannels": {
+        "type": "text",
+        "label": "Custom channels, comma-separated",
+        "group": "Channels",
+        "value": ""
+    },
+    "language": {
+        "label": "Chat language",
+        "group": "Language",
+        "value": "en",
+        "type": "dropdown",
+        "options": {
+            "en": "English",
+            "es": "Spanish"
+        }
+    },
+    "maxMessages": {
+        "label": "Maximum messages",
+        "group": "Messages",
+        "value": 35,
+        "type": "number",
+        "min": 1,
+        "max": 200,
+        "step": 1
+    },
+    "messageLifetimeSeconds": {
+        "label": "Message lifetime in seconds (0: never expire)",
+        "group": "Messages",
+        "value": 0,
+        "type": "number",
+        "min": 0,
+        "max": 86400,
+        "step": 1
+    },
+    "messageGapPx": {
+        "label": "Message spacing (px)",
+        "group": "Messages",
+        "value": 4,
+        "type": "number",
+        "min": 0,
+        "max": 100,
+        "step": 1
+    },
+    "messageLineHeight": {
+        "label": "Message line height (multiplier)",
+        "group": "Messages",
+        "value": 1.1,
+        "type": "number",
+        "min": 1,
+        "max": 3,
+        "step": 0.05
+    },
+    "replyGapPx": {
+        "label": "Reply header spacing (px)",
+        "group": "Replies and notices",
+        "value": 0,
+        "type": "number",
+        "min": -100,
+        "max": 100,
+        "step": 1
+    },
+    "fontSizePx": {
+        "label": "Text size",
+        "group": "Typography",
+        "value": 25,
+        "type": "number",
+        "min": 12,
+        "max": 100,
+        "step": 1
+    },
+    "emoteSizePx": {
+        "label": "Emote size",
+        "group": "Emotes and badges",
+        "value": 34,
+        "type": "number",
+        "min": 16,
+        "max": 160,
+        "step": 1
+    },
+    "gifMaxHeightPx": {
+        "label": "Maximum GIF height (px)",
+        "group": "Emotes and badges",
+        "value": 150,
+        "type": "number",
+        "min": 16,
+        "max": 1000,
+        "step": 1
+    },
+    "badgeSizePx": {
+        "label": "Badge size",
+        "group": "Emotes and badges",
+        "value": 30,
+        "type": "number",
+        "min": 12,
+        "max": 80,
+        "step": 1
+    },
+    "fontFamily": {
+        "label": "General local font",
+        "group": "Typography",
+        "value": "Aclonica",
+        "type": "text"
+    },
+    "usernameFontFamily": {
+        "label": "Username local font (empty: general font)",
+        "group": "Typography",
+        "value": "Aclonica",
+        "type": "text"
+    },
+    "textFontFamily": {
+        "label": "Message local font (empty: general font)",
+        "group": "Typography",
+        "value": "Arial Black",
+        "type": "text"
+    },
+    "googleFont": {
+        "label": "General Google Font (empty: local font)",
+        "group": "Typography",
+        "value": "Aclonica",
+        "type": "googleFont"
+    },
+    "usernameGoogleFont": {
+        "label": "Username Google Font (empty: local font)",
+        "group": "Typography",
+        "value": "Aclonica",
+        "type": "googleFont"
+    },
+    "textGoogleFont": {
+        "label": "Message Google Font (empty: local font)",
+        "group": "Typography",
+        "value": "",
+        "type": "googleFont"
+    },
+    "usernameBold": {
+        "label": "Bold usernames and mentions",
+        "group": "Typography",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showLocalizedUsername": {
+        "label": "Show login next to localized names",
+        "group": "Typography",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "textColor": {
+        "label": "Text color",
+        "group": "Typography",
+        "value": "#ffffff",
+        "type": "colorpicker"
+    },
+    "textShadow": {
+        "label": "Text shadow",
+        "group": "Typography",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "messageBackground": {
+        "label": "Message background",
+        "group": "Appearance",
+        "value": "false",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "messageBackgroundColor": {
+        "label": "Background color and opacity",
+        "group": "Appearance",
+        "value": "rgba(0, 0, 0, 0.6)",
+        "type": "colorpicker"
+    },
+    "showProviderIcon": {
+        "label": "Show Twitch icon",
+        "group": "Emotes and badges",
+        "value": "false",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "providerIconSizePx": {
+        "label": "Twitch icon size",
+        "group": "Emotes and badges",
+        "value": 30,
+        "type": "number",
+        "min": 12,
+        "max": 64,
+        "step": 1
+    },
+    "showBadges": {
+        "label": "Show badges",
+        "group": "Emotes and badges",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showSevenTVBadges": {
+        "label": "Show 7TV badges",
+        "group": "Emotes and badges",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showTwitchEmotes": {
+        "label": "Show Twitch emotes",
+        "group": "Emotes and badges",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showTwitchGifs": {
+        "label": "Show Twitch GIFs",
+        "group": "Emotes and badges",
+        "value": "false",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showCheers": {
+        "label": "Show Cheers/Bits",
+        "group": "Emotes and badges",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showSevenTVEmotes": {
+        "label": "Show 7TV emotes, including Shared Chat",
+        "group": "Emotes and badges",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showSevenTVPaints": {
+        "label": "Show equipped 7TV paints",
+        "group": "Emotes and badges",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "enableAnimations": {
+        "label": "Enable animations",
+        "group": "Appearance",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "moderationAnimation": {
+        "label": "Moderation effect",
+        "group": "Appearance",
+        "value": "dust",
+        "type": "dropdown",
+        "options": {
+            "dust": "Dust",
+            "none": "None"
+        }
+    },
+    "colorMentions": {
+        "label": "Color mentions",
+        "group": "Replies and notices",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showLinkLabels": {
+        "label": "Show domain labels for links",
+        "group": "Links",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showLinkFavicons": {
+        "label": "Show favicons via DuckDuckGo",
+        "group": "Links",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showReplies": {
+        "label": "Show reply header",
+        "group": "Replies and notices",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "showReplyPreview": {
+        "label": "Show original message preview",
+        "group": "Replies and notices",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "highlightFirstMessages": {
+        "label": "Highlight first-time chatters",
+        "group": "Replies and notices",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "firstMessageBackground": {
+        "label": "First-message background",
+        "group": "Replies and notices",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "firstMessageBackgroundColor": {
+        "label": "First-message color and opacity",
+        "group": "Replies and notices",
+        "value": "rgba(151, 71, 255, 0.7)",
+        "type": "colorpicker"
+    },
+    "showChannelPointRedemptions": {
+        "label": "Show redemptions detected in IRC (limited mode)",
+        "group": "Replies and notices",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "hideBotMessages": {
+        "label": "Hide listed bots",
+        "group": "Filters",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "hideCommands": {
+        "label": "Hide messages starting with listed prefixes",
+        "group": "Filters",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "commandPrefixes": {
+        "label": "Message prefixes to hide, comma-separated",
+        "group": "Filters",
+        "value": "!",
+        "type": "text"
+    },
+    "characterArtFilterEnabled": {
+        "label": "Filter large character art",
+        "group": "Filters",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "characterArtFilterMinChars": {
+        "label": "Minimum art characters",
+        "group": "Filters",
+        "value": 200,
+        "type": "number",
+        "min": 40,
+        "max": 10000,
+        "step": 1
+    },
+    "characterArtFilterMinDrawingRatio": {
+        "label": "Minimum art character ratio",
+        "group": "Filters",
+        "value": 0.8,
+        "type": "number",
+        "min": 0.5,
+        "max": 1,
+        "step": 0.05
+    },
+    "characterArtFilterMinRun": {
+        "label": "Minimum art run length",
+        "group": "Filters",
+        "value": 80,
+        "type": "number",
+        "min": 8,
+        "max": 10000,
+        "step": 1
+    },
+    "characterArtFilterMinSimilarLines": {
+        "label": "Minimum similar rows",
+        "group": "Filters",
+        "value": 4,
+        "type": "number",
+        "min": 3,
+        "max": 100,
+        "step": 1
+    },
+    "botLogins": {
+        "label": "Bot usernames, comma-separated",
+        "group": "Filters",
+        "value": "nightbot, streamelements, streamlabs, moobot, fossabot, wizebot, sery_bot, botrix, spotchbot",
+        "type": "text"
+    },
+    "layout": {
+        "label": "Message order",
+        "group": "Appearance",
+        "value": "stack-bottom",
+        "type": "dropdown",
+        "options": {
+            "stack-bottom": "Newest at bottom",
+            "stack-top": "Newest at top"
+        }
+    },
+    "debug": {
+        "label": "Show diagnostics",
+        "group": "Preview and diagnostics",
+        "value": "false",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
+    "demo": {
+        "label": "Demo mode (no live chat)",
+        "group": "Preview and diagnostics",
+        "value": "false",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    }
+}

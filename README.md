@@ -1,6 +1,8 @@
-﻿# Twitch Chat Widget
+﻿# Agapro Twitch Chat Widget
 
 A transparent Twitch chat widget for OBS and StreamElements.
+
+Ready-to-use files are included in `dist/`. You can install them directly; rebuild only when updating the widget or its root configuration.
 
 ## 1. Build
 
