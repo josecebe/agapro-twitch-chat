@@ -1,0 +1,10 @@
+name: Widget source
+queries:
+    - uses: security-extended
+paths:
+    - src
+    - scripts
+paths-ignore:
+    - node_modules
+    - dist
+    - tests

@@ -1,0 +1,389 @@
+:root {
+    color-scheme: dark;
+    --font-size: 25px;
+    --emote-size: 34px;
+    --badge-size: 20px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent !important;
+    overflow: hidden;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: var(--font-size);
+    color: white;
+}
+
+#chat {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--message-gap, 8px);
+    padding: 0.5em;
+    overflow: hidden;
+
+    &.top {
+        justify-content: flex-start;
+    }
+}
+
+.message {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+
+    &-content {
+        line-height: var(--message-line-height, 1.5);
+        flex: 0 0 auto;
+    }
+
+    .message-background & {
+        background-color: var(--message-background, rgba(0, 0, 0, 0.3));
+        padding: 0.2em 0.35em;
+        border-radius: 0.15em;
+    }
+
+    &.channel-points-redemption {
+        padding: 0.35em 0.55em;
+        border-inline-start: 3px solid #aaa3b2;
+    }
+
+    &.first-message {
+        padding: 0.35em 0.55em;
+        border-inline-start: 3px solid #d946ef;
+        border-radius: 0 0.2em 0.2em 0;
+    }
+
+    &.first-message-background {
+        background-image: linear-gradient(
+            var(--first-message-background, rgba(151, 71, 255, 0.55)),
+            var(--first-message-background, rgba(151, 71, 255, 0.55))
+        );
+    }
+
+    .shadow & {
+        text-shadow:
+            0 1px 3px #000,
+            0 0 2px #000,
+            1px 1px 1px #000;
+    }
+
+    .animated & {
+        animation: appear 0.22s ease-out both;
+
+        &.leaving {
+            animation: disappear 0.22s ease-in both;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            &,
+            &.leaving {
+                animation: none;
+            }
+        }
+    }
+
+    &.action {
+        .body {
+            font-family: var(--username-font-family, inherit);
+            font-size: var(--font-size);
+            font-weight: var(--username-weight, 400);
+        }
+    }
+}
+
+.redemption-context {
+    margin-bottom: 0.2em;
+    color: #d4ccd9;
+    font-family: var(--text-font-family, inherit);
+    font-size: 0.72em;
+    line-height: 1.3;
+}
+
+.first-message-label {
+    margin-bottom: 0.25em;
+    color: #e879f9;
+    font-family: var(--text-font-family, inherit);
+    font-size: 0.52em;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    text-align: right;
+}
+
+.dust-layer {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.name,
+.body {
+    font-size: var(--font-size);
+}
+
+.name,
+.mention {
+    font-family: var(--username-font-family, inherit);
+    font-weight: var(--username-weight, 400);
+}
+
+.name {
+    unicode-bidi: isolate;
+
+    .name-login {
+        font-weight: 400;
+    }
+}
+
+.body {
+    font-family: var(--text-font-family, inherit);
+}
+
+.reply {
+    &-context {
+        display: flex;
+        align-items: baseline;
+        gap: 0.4em;
+        min-width: 0;
+        max-width: 100%;
+        margin-bottom: var(--reply-gap, 4px);
+        font-family: var(--text-font-family, inherit);
+        font-size: 0.75em;
+        line-height: 1.3;
+        white-space: nowrap;
+    }
+
+    &-heading {
+        --reply-heading-bleed: max(6px, 0.35em, var(--reply-paint-bleed, 0px));
+        flex: 0 1 auto;
+        min-width: 0;
+        // Keep glyph overhangs and shadows inside the clip without moving the text
+        // or taking width away from the quoted preview.
+        padding-inline: var(--reply-heading-bleed);
+        margin-inline: calc(-1 * var(--reply-heading-bleed));
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &-quote {
+        --emote-size: 1em;
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0.7;
+
+        .emote-stack {
+            vertical-align: middle;
+        }
+
+        .link-label {
+            font-size: 0.7em;
+            max-width: none;
+            white-space: nowrap;
+        }
+
+        .link-domain {
+            overflow-wrap: normal;
+        }
+    }
+
+    &-preview-part,
+    &-preview-ellipsis {
+        &[hidden] {
+            display: none;
+        }
+    }
+}
+
+/* Align badges to cap height, with an em-based fallback for older CEF. */
+.badge {
+    width: var(--badge-size);
+    height: var(--badge-size);
+    object-fit: contain;
+    vertical-align: calc((0.7em - var(--badge-size)) / 2);
+    margin-right: 0.22em;
+
+    @supports (height: 1cap) {
+        vertical-align: calc((1cap - var(--badge-size)) / 2);
+    }
+}
+
+.provider-icon {
+    width: var(--provider-icon-size, 20px);
+    height: var(--provider-icon-size, 20px);
+    object-fit: contain;
+    vertical-align: calc((0.7em - var(--provider-icon-size, 20px)) / 2);
+    margin-right: 0.3em;
+
+    @supports (height: 1cap) {
+        vertical-align: calc((1cap - var(--provider-icon-size, 20px)) / 2);
+    }
+}
+
+.emote {
+    display: inline-block;
+    height: var(--emote-size);
+    width: auto;
+    object-fit: contain;
+    vertical-align: top;
+
+    &-stack {
+        display: inline-block;
+        position: relative;
+        height: var(--emote-size);
+        vertical-align: middle;
+        line-height: 0;
+        text-shadow: none;
+    }
+
+    &.overlay {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        transform: translateX(-50%);
+        max-width: none;
+    }
+}
+
+.chat-gif {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: var(--gif-max-height, 150px);
+    object-fit: contain;
+}
+
+.cheer {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.16em;
+    height: 1em;
+    vertical-align: -0.15em;
+    white-space: nowrap;
+
+    &-icon {
+        width: 1em;
+        height: 1em;
+        object-fit: contain;
+    }
+
+    &-amount {
+        font-size: 0.75em;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    @supports (height: 1cap) {
+        vertical-align: calc((1cap - 1em) / 2);
+    }
+}
+
+.link {
+    &-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3em;
+        max-width: 100%;
+        padding: 0.08em 0.35em;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 0.4em;
+        background: rgba(35, 38, 47, 0.9);
+        color: #fff;
+        font-size: 0.65em;
+        font-weight: 700;
+        line-height: 1.2;
+        vertical-align: middle;
+        white-space: normal;
+        unicode-bidi: isolate;
+        text-shadow: none;
+        -webkit-text-fill-color: currentColor;
+    }
+
+    &-domain {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    &-favicon {
+        flex: 0 0 auto;
+        width: 1em;
+        height: 1em;
+        object-fit: contain;
+    }
+}
+
+.painted {
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+
+    .shadow & {
+        // Match .shadow .message: blur radii 3/2/1px become SVG deviations 1.5/1/0.5.
+        // Draw each black shadow from SourceAlpha independently, then the original paint.
+        // Chained drop-shadow() filters also shadow earlier shadows and darken the result.
+        // An equipped paint's inline filter replaces this default.
+        filter: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22s%22%20x%3D%22-50%25%22%20y%3D%22-50%25%22%20width%3D%22200%25%22%20height%3D%22200%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeGaussianBlur%20in%3D%22SourceAlpha%22%20stdDeviation%3D%221.5%22%20result%3D%22b1%22%2F%3E%3CfeOffset%20in%3D%22b1%22%20dy%3D%221%22%20result%3D%22s1%22%2F%3E%3CfeGaussianBlur%20in%3D%22SourceAlpha%22%20stdDeviation%3D%221%22%20result%3D%22s2%22%2F%3E%3CfeGaussianBlur%20in%3D%22SourceAlpha%22%20stdDeviation%3D%220.5%22%20result%3D%22b3%22%2F%3E%3CfeOffset%20in%3D%22b3%22%20dx%3D%221%22%20dy%3D%221%22%20result%3D%22s3%22%2F%3E%3CfeFlood%20flood-color%3D%22black%22%20result%3D%22black%22%2F%3E%3CfeComposite%20in%3D%22black%22%20in2%3D%22s1%22%20operator%3D%22in%22%20result%3D%22c1%22%2F%3E%3CfeComposite%20in%3D%22black%22%20in2%3D%22s2%22%20operator%3D%22in%22%20result%3D%22c2%22%2F%3E%3CfeComposite%20in%3D%22black%22%20in2%3D%22s3%22%20operator%3D%22in%22%20result%3D%22c3%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22c1%22%2F%3E%3CfeMergeNode%20in%3D%22c2%22%2F%3E%3CfeMergeNode%20in%3D%22c3%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fsvg%3E#s');
+    }
+}
+
+#diagnostics {
+    position: fixed;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 10px;
+    max-height: 48%;
+    width: 100%;
+    overflow: auto;
+    white-space: pre-wrap;
+    background: #101421ed;
+    color: #c6f9df;
+    font:
+        12px/1.45 Consolas,
+        monospace;
+}
+
+@keyframes appear {
+    from {
+        opacity: 0;
+        transform: translateY(7px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes disappear {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(7px);
+    }
+}

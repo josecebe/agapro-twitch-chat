@@ -1,0 +1,101 @@
+{
+    "source": "https://7tv.io/v4/gql",
+    "query": "query PaintFixture { paints { paints {\n                            id\n                            name\n                            data {\n                                layers {\n                                    opacity\n                                    ty {\n                                        __typename\n                                        ... on PaintLayerTypeSingleColor {\n                                            color {\n                                                r\n                                                g\n                                                b\n                                                a\n                                            }\n                                        }\n                                        ... on PaintLayerTypeLinearGradient {\n                                            angle\n                                            repeating\n                                            stops {\n                                                at\n                                                color {\n                                                    r\n                                                    g\n                                                    b\n                                                    a\n                                                }\n                                            }\n                                        }\n                                        ... on PaintLayerTypeRadialGradient {\n                                            shape\n                                            repeating\n                                            stops {\n                                                at\n                                                color {\n                                                    r\n                                                    g\n                                                    b\n                                                    a\n                                                }\n                                            }\n                                        }\n                                        ... on PaintLayerTypeImage {\n                                            images {\n                                                url\n                                                mime\n                                                width\n                                                height\n                                            }\n                                        }\n                                    }\n                                }\n                                shadows {\n                                    offsetX\n                                    offsetY\n                                    blur\n                                    color {\n                                        r\n                                        g\n                                        b\n                                        a\n                                    }\n                                }\n                            }\n                        } } }",
+    "capturedAt": "2026-11-04T17:46:56.262Z",
+    "paint": {
+        "id": "01M66TYCCW1KJHERVT03TXTXDN",
+        "name": "Stained Glass",
+        "data": {
+            "layers": [
+                {
+                    "opacity": 1,
+                    "ty": {
+                        "__typename": "PaintLayerTypeLinearGradient",
+                        "angle": 135,
+                        "repeating": true,
+                        "stops": [
+                            {
+                                "at": 0,
+                                "color": {
+                                    "r": 255,
+                                    "g": 255,
+                                    "b": 255,
+                                    "a": 255
+                                }
+                            },
+                            {
+                                "at": 0.12,
+                                "color": {
+                                    "r": 254,
+                                    "g": 42,
+                                    "b": 187,
+                                    "a": 255
+                                }
+                            },
+                            {
+                                "at": 0.12,
+                                "color": {
+                                    "r": 0,
+                                    "g": 255,
+                                    "b": 191,
+                                    "a": 255
+                                }
+                            },
+                            {
+                                "at": 0.23,
+                                "color": {
+                                    "r": 163,
+                                    "g": 26,
+                                    "b": 255,
+                                    "a": 255
+                                }
+                            },
+                            {
+                                "at": 0.23,
+                                "color": {
+                                    "r": 217,
+                                    "g": 255,
+                                    "b": 0,
+                                    "a": 255
+                                }
+                            },
+                            {
+                                "at": 0.33,
+                                "color": {
+                                    "r": 254,
+                                    "g": 41,
+                                    "b": 22,
+                                    "a": 255
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "shadows": [
+                {
+                    "offsetX": 0,
+                    "offsetY": 0,
+                    "blur": 0.1,
+                    "color": {
+                        "r": 194,
+                        "g": 58,
+                        "b": 251,
+                        "a": 255
+                    }
+                },
+                {
+                    "offsetX": 0,
+                    "offsetY": 0,
+                    "blur": 4,
+                    "color": {
+                        "r": 87,
+                        "g": 87,
+                        "b": 87,
+                        "a": 255
+                    }
+                }
+            ]
+        }
+    }
+}

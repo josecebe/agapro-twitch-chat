@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Twitch Chat · OBS</title>
+        <link id="widget-styles" rel="stylesheet" />
+    </head>
+    <body>
+        <main id="chat" aria-label="Live chat" role="log"></main>
+        <pre id="diagnostics" hidden></pre>
+        <script>
+            // Refresh local application files while preserving the emote cache.
+            (function () {
+                var revision = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+                document.getElementById('widget-styles').href = 'styles.css?v=' + revision;
+                var files = [
+                    'config.js',
+                    'src/core.js',
+                    'src/domain-tlds.js',
+                    'src/i18n.js',
+                    'src/locales/en.js',
+                    'src/locales/es.js',
+                    'src/diagnostics.js',
+                    'src/providers.js',
+                    'src/dust.js',
+                    'src/renderer.js',
+                    'src/demo.js',
+                    'src/main.js',
+                    'src/local.js'
+                ];
+                var index = 0;
+                function next() {
+                    if (index === files.length) {
+                        return;
+                    }
+                    var file = files[index++];
+                    var script = document.createElement('script');
+                    script.src = file + '?v=' + revision;
+                    script.onload = next;
+                    script.onerror = function () {
+                        var panel = document.getElementById('diagnostics');
+                        panel.hidden = false;
+                        panel.textContent =
+                            'Unable to load ' +
+                            file +
+                            '. Keep the complete widget folder together.';
+                    };
+                    document.body.appendChild(script);
+                }
+                next();
+            })();
+        </script>
+    </body>
+</html>

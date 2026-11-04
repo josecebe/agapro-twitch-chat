@@ -1,0 +1,25 @@
+{
+    "name": "twitch-chat-widget",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Build a standalone OBS chat widget and StreamElements custom widget tabs.",
+    "engines": {
+        "node": ">=20.19.0"
+    },
+    "scripts": {
+        "build": "node scripts/build.mjs",
+        "build:css": "node scripts/styles.mjs",
+        "watch:css": "sass --watch --no-source-map --no-charset src/styles.scss:styles.css",
+        "test": "node scripts/test.mjs",
+        "test:browser": "node scripts/browser-tests.mjs",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "devDependencies": {
+        "esbuild": "0.28.2",
+        "graphql": "16.11.0",
+        "html-minifier-terser": "7.2.0",
+        "prettier": "3.9.10",
+        "sass": "1.107.1"
+    }
+}

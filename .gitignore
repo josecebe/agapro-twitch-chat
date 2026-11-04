@@ -1,0 +1,14 @@
+node_modules/
+dist/
+/styles.css
+/_*/
+/tests/artifacts/
+/.agents/
+/.codex/
+/.aws/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db

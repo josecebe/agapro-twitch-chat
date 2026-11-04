@@ -1,0 +1,71 @@
+{
+    "source": "https://7tv.io/v4/gql",
+    "capturedAt": "2026-11-04T18:05:04.241Z",
+    "paint": {
+        "id": "01M19D4SHRVM6MWQ4PJB9TG97T",
+        "name": "Epiphany",
+        "data": {
+            "layers": [
+                {
+                    "opacity": 1,
+                    "ty": {
+                        "__typename": "PaintLayerTypeLinearGradient",
+                        "angle": 0,
+                        "repeating": false,
+                        "stops": [
+                            {
+                                "at": 0,
+                                "color": {
+                                    "r": 255,
+                                    "g": 200,
+                                    "b": 82,
+                                    "a": 255
+                                }
+                            },
+                            {
+                                "at": 0.15,
+                                "color": {
+                                    "r": 254,
+                                    "g": 239,
+                                    "b": 144,
+                                    "a": 255
+                                }
+                            },
+                            {
+                                "at": 0.3,
+                                "color": {
+                                    "r": 254,
+                                    "g": 213,
+                                    "b": 124,
+                                    "a": 255
+                                }
+                            },
+                            {
+                                "at": 0.6,
+                                "color": {
+                                    "r": 255,
+                                    "g": 255,
+                                    "b": 255,
+                                    "a": 255
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "shadows": [
+                {
+                    "offsetX": 0,
+                    "offsetY": 0,
+                    "blur": 4,
+                    "color": {
+                        "r": 255,
+                        "g": 162,
+                        "b": 0,
+                        "a": 255
+                    }
+                }
+            ]
+        }
+    }
+}
