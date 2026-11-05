@@ -6,6 +6,7 @@ await writeStyles();
 for (const suite of [
     'browser-cleanup-check',
     'spacing-browser-check',
+    'emote-stack-browser-check',
     'visible-spacing-browser-check',
     'paint-browser-check',
     'links-browser-check',

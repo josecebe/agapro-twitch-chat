@@ -19,8 +19,8 @@
     ],
     "files": {
         "local/index.html": {
-            "bytes": 91888,
-            "sha256": "2c078843de996faeae3b2f0df6084f6fa43e8ab4e63c571c994774d1172fa5df"
+            "bytes": 91867,
+            "sha256": "2fd69b8e4f183b879f386530202637918a75b7d789934a4523a6af846459dcd5"
         },
         "local/config.js": {
             "bytes": 2908,
@@ -31,8 +31,8 @@
             "sha256": "f4ae79a809b6b7ee9dc297bae1dd1bd5f606f8732711c385f32e4bb7380e2714"
         },
         "streamelements/style.css": {
-            "bytes": 6658,
-            "sha256": "10721753448bba0b0b2813752a669a1eb1e76c951ba4912d84bc89433d7ca0dc"
+            "bytes": 6637,
+            "sha256": "28a2134e06108d5d36c169e4e73206b3b0b4902bc299b476367bb9ce75b73b8f"
         },
         "streamelements/index.js": {
             "bytes": 88250,
@@ -51,8 +51,8 @@
             "sha256": "846c273e51b75b470a72dea59aae872319dac233c87edba031648648c35bf7a0"
         },
         "streamlabs/style.css": {
-            "bytes": 6658,
-            "sha256": "10721753448bba0b0b2813752a669a1eb1e76c951ba4912d84bc89433d7ca0dc"
+            "bytes": 6637,
+            "sha256": "28a2134e06108d5d36c169e4e73206b3b0b4902bc299b476367bb9ce75b73b8f"
         },
         "streamlabs/index.js": {
             "bytes": 87763,
