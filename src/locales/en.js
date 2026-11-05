@@ -15,6 +15,8 @@
         linkTwitchDirectory: 'TWITCH DIRECTORY',
         linkTwitchClips: 'CLIPS · @{channel}',
         waitingForStreamElements: 'Waiting for StreamElements to load…',
+        streamlabsChannelRequired:
+            'Add at least one valid Twitch channel to sources at the top of the Streamlabs JS tab.',
         startFailed: 'Unable to start chat: {error}',
         customChannelRequired: 'Enter at least one valid Twitch channel in Custom channels.',
         overlayChannelMissing:

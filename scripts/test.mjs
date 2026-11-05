@@ -23,7 +23,8 @@ const result = spawnSync(
         'tests/unit/build.test.mjs',
         'tests/unit/browser-session.test.mjs',
         'tests/unit/i18n.test.mjs',
-        'tests/unit/demo.test.mjs'
+        'tests/unit/demo.test.mjs',
+        'tests/unit/streamlabs.test.mjs'
     ],
     {
         stdio: 'inherit'

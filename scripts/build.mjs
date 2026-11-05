@@ -115,6 +115,21 @@ export async function buildProject({
         library + '\n' + adapter,
         `namespace.ChatWidget.attachStreamElements(${configLiteral});`
     );
+    const streamlabsAdapter = isolate(
+        await readFile(path.join(projectRoot, 'src/streamlabs.js'), 'utf8'),
+        'streamlabs'
+    );
+    // Keep the complete configuration readable and editable in the JS tab.
+    // Streamlabs uses its own events and settings format, not onWidgetLoad.
+    const streamlabsJS =
+        '(function () {\n// Edit your Twitch channels and appearance here.\nconst config = ' +
+        JSON.stringify(config, null, 4) +
+        ';\n' +
+        (await javascript(
+            library + '\n' + streamlabsAdapter,
+            'namespace.ChatWidget.attachStreamlabs(config);'
+        )) +
+        '\n})();\n';
     const styles = compileStyles();
     if (developmentCSS) await writeStyles(styles);
     const css = (
@@ -163,12 +178,22 @@ export async function buildProject({
         'local/config.js': await readFile(path.join(projectRoot, 'config.js'), 'utf8'),
         ...Object.fromEntries(
             Object.entries(tabs).map(([name, content]) => ['streamelements/' + name, content])
-        )
+        ),
+        // Streamlabs sanitizes <pre> elements; keep diagnostics in a regular div.
+        'streamlabs/index.html': await minify(
+            markup.replace(
+                '<pre id="diagnostics" hidden></pre>',
+                '<div id="diagnostics" hidden role="status"></div>'
+            ),
+            htmlOptions
+        ),
+        'streamlabs/style.css': tabs['style.css'],
+        'streamlabs/index.js': streamlabsJS
     };
     const manifest = {
         sources: libraryFiles
             .map((name) => 'src/' + name + '.js')
-            .concat('src/streamelements.js', 'config.js', 'index.html')
+            .concat('src/streamelements.js', 'src/streamlabs.js', 'config.js', 'index.html')
             .concat(
                 styles.loadedUrls.map((url) =>
                     path.relative(projectRoot, fileURLToPath(url)).split(path.sep).join('/')

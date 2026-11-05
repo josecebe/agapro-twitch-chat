@@ -2,7 +2,7 @@
     "name": "twitch-chat-widget",
     "version": "1.0.0",
     "private": true,
-    "description": "Build a standalone OBS chat widget and StreamElements custom widget tabs.",
+    "description": "Build a standalone OBS chat widget and StreamElements and Streamlabs custom widget tabs.",
     "engines": {
         "node": ">=20.19.0"
     },

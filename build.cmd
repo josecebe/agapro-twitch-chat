@@ -14,6 +14,7 @@ echo.
 echo Local HTML: dist\local\index.html
 echo Local configuration: dist\local\config.js
 echo StreamElements tabs: dist\streamelements
+echo Streamlabs tabs: dist\streamlabs
 pause
 exit /b 0
 :failed

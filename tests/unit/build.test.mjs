@@ -85,6 +85,40 @@ test('StreamElements produces five tabs with JSON settings and no separate opaci
     }
 });
 
+test('Streamlabs produces three tabs and boots independently of StreamElements events', async () => {
+    assert.deepEqual((await readdir(path.join(outdir, 'streamlabs'))).sort(), [
+        'index.html',
+        'index.js',
+        'style.css'
+    ]);
+    const html = await readFile(path.join(outdir, 'streamlabs/index.html'), 'utf8');
+    assert.match(html, /id=chat/);
+    assert.match(html, /<div[^>]*id=diagnostics/);
+    assert.doesNotMatch(html, /<pre/);
+    assert.doesNotMatch(html, /Waiting for StreamElements|<script|<link/);
+    assert.equal(
+        await readFile(path.join(outdir, 'streamlabs/style.css'), 'utf8'),
+        await readFile(path.join(outdir, 'streamelements/style.css'), 'utf8')
+    );
+    const js = await readFile(path.join(outdir, 'streamlabs/index.js'), 'utf8');
+    const config = JSON.parse(js.match(/const config = ([\s\S]*?);\n/)[1]);
+    assert.deepEqual(config, defaults);
+    assert.doesNotMatch(js, /streamlabs-platform|Streamlabs\.init|channelMode/);
+    const listeners = new Map();
+    const sandbox = vm.createContext({
+        document: {
+            readyState: 'loading',
+            addEventListener: (name, callback) => listeners.set(name, callback)
+        },
+        window: {}
+    });
+    vm.runInContext(js, sandbox);
+    assert.equal(typeof listeners.get('DOMContentLoaded'), 'function');
+    assert.equal(sandbox.window.ChatWidget, undefined);
+    assert.equal(sandbox.window.CHAT_WIDGET_RUNTIME, undefined);
+    assert.doesNotMatch(js, /onWidgetLoad|onEventReceived/);
+});
+
 test('compiled namespace is encapsulated and StreamElements waits for onWidgetLoad', async () => {
     const listeners = new Map();
     const sandbox = vm.createContext({
