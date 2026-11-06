@@ -11,52 +11,59 @@
         "src/renderer.js",
         "src/demo.js",
         "src/main.js",
+        "src/templates/registry.mjs",
+        "src/templates/bubble-chat/presentation.mjs",
+        "src/templates/classic/config.json",
+        "src/templates/classic/style.scss",
+        "src/templates/bubble-chat/config.json",
+        "src/templates/bubble-chat/style.scss",
         "src/streamelements.js",
         "src/streamlabs.js",
         "config.js",
         "index.html",
-        "src/styles.scss"
+        "src/styles.scss",
+        "src/styles/_highlight.scss"
     ],
     "files": {
         "local/index.html": {
-            "bytes": 91867,
-            "sha256": "2fd69b8e4f183b879f386530202637918a75b7d789934a4523a6af846459dcd5"
+            "bytes": 103566,
+            "sha256": "0a41ca38fef3507fd61f0cf6fb63ac6c4ad8e522cfc764722c54b23e30316c69"
         },
         "local/config.js": {
-            "bytes": 2908,
-            "sha256": "00fdd289859c3fe48dabf6cd0e3baaf8786657be6f77e901242264d4868e2c97"
+            "bytes": 3462,
+            "sha256": "03e506e4ea24dbcdaa8f0233dacb3701fd9022ee50be168625330d444002f105"
         },
         "streamelements/index.html": {
             "bytes": 116,
             "sha256": "f4ae79a809b6b7ee9dc297bae1dd1bd5f606f8732711c385f32e4bb7380e2714"
         },
         "streamelements/style.css": {
-            "bytes": 6637,
-            "sha256": "28a2134e06108d5d36c169e4e73206b3b0b4902bc299b476367bb9ce75b73b8f"
+            "bytes": 13789,
+            "sha256": "8a33d4b4e7a69279e84aa890d6d6e92d6618d9ed5c2ac2f43700cd50ead79e66"
         },
         "streamelements/index.js": {
-            "bytes": 88250,
-            "sha256": "a6088009f04aa3b24e3f83a86c53af89d59f4b6f1acee49a601e276ce4c1c434"
+            "bytes": 92860,
+            "sha256": "4e54a6bfc9dbc2f0cb6d69e729ed9038a746d41fef8bdda3a0a0158d0384a7fd"
         },
         "streamelements/fields.json": {
-            "bytes": 12636,
-            "sha256": "577d0daa3d44fca89040083241801e4e5bf852cdc8e7d7cbbd893fe0c5e1cf5e"
+            "bytes": 13482,
+            "sha256": "2bde3147555a5245983da0d4733ef7cc51abcb2ae9fe5ce42c6a43a04ce0830f"
         },
         "streamelements/data.json": {
-            "bytes": 1866,
-            "sha256": "e9241ac5f31c25f6ce8b413c4ba2237f4066b93329d01ea1f1176f06cc0766e1"
+            "bytes": 1961,
+            "sha256": "73cf85edb0d7823950a10b6b7c77b0d2949617e9c2444ef1f61e616413c63029"
         },
         "streamlabs/index.html": {
             "bytes": 98,
             "sha256": "846c273e51b75b470a72dea59aae872319dac233c87edba031648648c35bf7a0"
         },
         "streamlabs/style.css": {
-            "bytes": 6637,
-            "sha256": "28a2134e06108d5d36c169e4e73206b3b0b4902bc299b476367bb9ce75b73b8f"
+            "bytes": 13789,
+            "sha256": "8a33d4b4e7a69279e84aa890d6d6e92d6618d9ed5c2ac2f43700cd50ead79e66"
         },
         "streamlabs/index.js": {
-            "bytes": 87763,
-            "sha256": "44fd2d671c8f74a23bc194056dae64fe4bd00b9a19dc46884f9062d166d336d2"
+            "bytes": 92401,
+            "sha256": "5ed9d2ce689e03f848ee93d9f49cbdc74c648d237bdfc6a3ee41cf37f19c7b89"
         }
     }
 }

@@ -371,6 +371,49 @@
                 );
             }
         }
+        // Channel avatar for Shared Chat origin icons; fetched once per room and cached.
+        channelAvatar(id) {
+            if (typeof id !== 'string' || !/^\d+$/.test(id)) return null;
+            this.avatars ||= new Map();
+            let entry = this.avatars.get(id);
+            if (!entry) {
+                if (this.avatars.size >= 64) this.avatars.delete(this.avatars.keys().next().value);
+                entry = { src: null, name: '', due: 0 };
+                this.avatars.set(id, entry);
+            }
+            if (!entry.pending && !this.stopped && Date.now() >= entry.due) {
+                entry.pending = Promise.resolve()
+                    .then(() =>
+                        this.fetcher(
+                            'https://api.ivr.fi/v2/twitch/user?id=' + encodeURIComponent(id)
+                        )
+                    )
+                    .then(
+                        (data) => {
+                            const user = Array.isArray(data) ? data[0] : data;
+                            // Twitch serves smaller avatar sizes under the same name.
+                            entry.src = ChatWidget.safeURL(
+                                String(user?.logo || '').replace(
+                                    /-profile_image-\d+x\d+\./,
+                                    '-profile_image-150x150.'
+                                ),
+                                ['static-cdn.jtvnw.net']
+                            );
+                            entry.name = String(user?.displayName || user?.login || '');
+                            entry.due = Date.now() + 3600000;
+                            if (entry.src && !this.stopped) this.changed();
+                        },
+                        (error) => {
+                            entry.due = Date.now() + Math.max(60000, error?.retryAfter || 0);
+                            this.report('avatar ' + id, error?.message || String(error));
+                        }
+                    )
+                    .finally(() => {
+                        entry.pending = null;
+                    });
+            }
+            return entry.src ? entry : null;
+        }
         setChannel(id) {
             if (!/^\d+$/.test(id) || id === this.channelId) {
                 return;

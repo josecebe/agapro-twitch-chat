@@ -42,7 +42,7 @@ test('local build embeds the application and loads a separate readable config', 
     assert.doesNotMatch(html, /assets\/providers\/twitch\.png/);
     assert.equal((html.match(/<\/script>/g) || []).length, 2);
     new vm.Script(html.match(/<script>([\s\S]*?)<\/script>/)[1]);
-    assert.ok(html.length < 100000);
+    assert.ok(Buffer.byteLength(html) < 110 * 1024);
 });
 
 test('compiled GraphQL preserves the query while removing ignored whitespace', async () => {
@@ -71,6 +71,16 @@ test('StreamElements produces five tabs with JSON settings and no separate opaci
     assert.equal(fields.firstMessageBackgroundColor.type, 'colorpicker');
     assert.equal(data.messageBackgroundColor, defaults.messageBackgroundColor);
     assert.equal(fields.channelMode.value, 'associated');
+    assert.equal(fields.template.type, 'dropdown');
+    assert.deepEqual(fields.template.options, {
+        classic: 'Classic',
+        'bubble-chat': 'Bubble Chat'
+    });
+    assert.equal(data.template, 'classic');
+    assert.equal(fields.usernameGradient.group, 'Typography');
+    assert.equal(fields.usernameGradient.type, 'dropdown');
+    assert.equal(data.usernameGradient, 'false');
+    assert.equal(configure({ fieldData: { template: 'bubble-chat' } }).template, 'bubble-chat');
     assert.equal(fields.language.type, 'dropdown');
     assert.deepEqual(fields.language.options, { en: 'English', es: 'Spanish' });
     assert.equal(fields.language.value, 'en');

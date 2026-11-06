@@ -239,4 +239,46 @@ for (let i = 200; i < 250; i++) {
 test('Shared Chat: origin cache size is limited to 32 channels', () =>
     assert.equal(bounded.sourceChannels.size, 32));
 bounded.stop();
+const avatarCalls = [];
+let avatarFails = false;
+const avatarAssets = new A.Assets(
+    () => {},
+    async (url) => {
+        avatarCalls.push(url);
+        if (avatarFails) throw Object.assign(Error('HTTP 500'), { status: 500 });
+        const id = new URL(url).searchParams.get('id');
+        return [
+            {
+                displayName: 'Chan' + id,
+                logo:
+                    id === '666'
+                        ? 'https://evil.example/logo.png'
+                        : `https://static-cdn.jtvnw.net/user-default-pictures/${id}.png`
+            }
+        ];
+    }
+);
+let avatarChanges = 0;
+avatarAssets.listeners.add(() => avatarChanges++);
+avatarAssets.channelAvatar('200');
+avatarAssets.channelAvatar('200');
+avatarAssets.channelAvatar('evil');
+await new Promise((r) => setTimeout(r, 5));
+test('Shared Chat: origin channel avatars are fetched once, cached and validated', () => {
+    assert.deepEqual(avatarCalls, ['https://api.ivr.fi/v2/twitch/user?id=200']);
+    assert.equal(avatarChanges, 1);
+    const avatar = avatarAssets.channelAvatar('200');
+    assert.equal(avatar.src, 'https://static-cdn.jtvnw.net/user-default-pictures/200.png');
+    assert.equal(avatar.name, 'Chan200');
+    assert.equal(avatarCalls.length, 1);
+});
+avatarAssets.channelAvatar('666');
+avatarFails = true;
+avatarAssets.channelAvatar('300');
+await new Promise((r) => setTimeout(r, 5));
+test('Shared Chat: untrusted avatar hosts and failed lookups show no icon and defer retries', () => {
+    assert.equal(avatarAssets.channelAvatar('666'), null);
+    assert.equal(avatarAssets.channelAvatar('300'), null);
+    assert.equal(avatarCalls.length, 3);
+});
 console.log(`${count} tests PASS`);

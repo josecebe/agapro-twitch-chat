@@ -1,0 +1,25 @@
+@mixin background {
+    background: linear-gradient(
+            -45deg,
+            #ffadaddd,
+            #ffd6a5dd,
+            #fdffb6dd,
+            #caffbfdd,
+            #9bf6ffdd,
+            #a0c4ffdd,
+            #bdb2ffdd,
+            #ffc6ffdd,
+            #ffadaddd,
+            #ffd6a5dd
+        )
+        100% 100% / 900% 900%;
+}
+
+@keyframes highlight-gradient {
+    from {
+        background-position: 100% 100%;
+    }
+    to {
+        background-position: 0 0;
+    }
+}

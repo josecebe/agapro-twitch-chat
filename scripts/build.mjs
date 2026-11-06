@@ -8,6 +8,7 @@ import { minify } from 'html-minifier-terser';
 import { createFields } from './fields.mjs';
 import { stripIgnoredCharacters } from 'graphql';
 import { compileStyles, writeStyles } from './styles.mjs';
+import { readTemplates, compileTemplates, writeTemplates } from './templates.mjs';
 
 export const projectRoot = fileURLToPath(new URL('../', import.meta.url));
 const localizationFiles = ['i18n', 'locales/en', 'locales/es'];
@@ -16,6 +17,7 @@ const libraryFiles = [
     'domain-tlds',
     ...localizationFiles,
     'diagnostics',
+    'templates',
     'providers',
     'dust',
     'renderer',
@@ -93,8 +95,11 @@ export async function buildProject({
     }
     localization.window.ChatWidget.i18n.validate();
     const configLiteral = JSON.stringify(config);
+    const templates = readTemplates();
+    const templateBundle = compileTemplates({ templates, namespace: 'namespace.ChatWidget' });
     const modules = await Promise.all(
         libraryFiles.map(async (name) => {
+            if (name === 'templates') return templateBundle.code;
             let source = await readFile(path.join(projectRoot, 'src', name + '.js'), 'utf8');
             source = source.replace(/\/\* GraphQL \*\/\s*`([^`]*?)`/g, (_match, query) =>
                 JSON.stringify(stripIgnoredCharacters(query))
@@ -130,8 +135,11 @@ export async function buildProject({
             'namespace.ChatWidget.attachStreamlabs(config);'
         )) +
         '\n})();\n';
-    const styles = compileStyles();
-    if (developmentCSS) await writeStyles(styles);
+    const styles = compileStyles({ templates });
+    if (developmentCSS) {
+        await writeStyles(styles);
+        await writeTemplates(compileTemplates({ templates }));
+    }
     const css = (
         await transform(styles.css, {
             loader: 'css',
@@ -158,7 +166,7 @@ export async function buildProject({
             ),
         htmlOptions
     );
-    const { fields, data } = createFields(config);
+    const { fields, data } = createFields(config, { templates });
     const tabs = {
         'index.html': await minify(
             markup.replace(
@@ -191,14 +199,24 @@ export async function buildProject({
         'streamlabs/index.js': streamlabsJS
     };
     const manifest = {
-        sources: libraryFiles
-            .map((name) => 'src/' + name + '.js')
-            .concat('src/streamelements.js', 'src/streamlabs.js', 'config.js', 'index.html')
-            .concat(
-                styles.loadedUrls.map((url) =>
-                    path.relative(projectRoot, fileURLToPath(url)).split(path.sep).join('/')
-                )
-            ),
+        sources: [
+            ...new Set(
+                libraryFiles
+                    .filter((name) => name !== 'templates')
+                    .map((name) => 'src/' + name + '.js')
+                    .concat(
+                        templateBundle.sources.map((file) =>
+                            path.relative(projectRoot, file).split(path.sep).join('/')
+                        )
+                    )
+                    .concat('src/streamelements.js', 'src/streamlabs.js', 'config.js', 'index.html')
+                    .concat(
+                        styles.loadedUrls.map((url) =>
+                            path.relative(projectRoot, fileURLToPath(url)).split(path.sep).join('/')
+                        )
+                    )
+            )
+        ],
         files: Object.fromEntries(
             Object.entries(files).map(([name, content]) => [
                 name,

@@ -21,6 +21,7 @@ const result = spawnSync(
     [
         '--test',
         'tests/unit/build.test.mjs',
+        'tests/unit/templates.test.mjs',
         'tests/unit/browser-session.test.mjs',
         'tests/unit/i18n.test.mjs',
         'tests/unit/demo.test.mjs',

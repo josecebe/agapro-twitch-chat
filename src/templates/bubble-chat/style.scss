@@ -1,0 +1,183 @@
+@use '../../styles/highlight';
+
+// Theme geometry is scoped here; typography and media sizes use shared controls.
+#chat[data-template='bubble-chat'] {
+    align-items: flex-start;
+    padding: var(--bubble-frame-padding);
+
+    .message {
+        position: relative;
+        isolation: isolate;
+        display: grid;
+        grid-template-columns:
+            [provider] max-content [badges] max-content
+            [username] minmax(0, max-content) [space] minmax(0, 1fr) [end];
+        grid-template-rows:
+            [reply] var(--bubble-reply-track, 0px) [header] minmax(
+                var(--bubble-header-min-height),
+                max-content
+            )
+            [notice] auto [body] auto [end];
+        width: fit-content;
+        max-width: 100%;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+        // Only #chat's configured gap separates messages, including in an overlay.
+        margin: 0;
+        gap: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        line-height: 1.2;
+
+        // The shared separator can create an anonymous grid item. Reserve a reply
+        // row only when an actual reply exists, never for that invisible text.
+        &.has-reply {
+            --bubble-reply-track: auto;
+        }
+
+        &.first-message,
+        &.channel-points-redemption,
+        &.highlighted-message {
+            width: 100%;
+        }
+
+        // Replies sit above the name pill, outside the bubble background.
+        &::before {
+            content: '';
+            grid-area: notice / provider / end / end;
+            margin-top: calc(-1 * var(--bubble-overlap));
+            margin-inline: var(--bubble-body-margin);
+            background: var(--message-background, hsla(0, 0%, 0%, 0.54));
+            border-radius: var(--bubble-body-radius);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        // A single pill behind badges and name, including translucent 7TV paints.
+        &::after {
+            content: '';
+            grid-area: header / provider / notice / space;
+            border-radius: var(--bubble-name-radius);
+            background-color: var(--bubble-user-color);
+            background-image: var(--bubble-name-paint, none);
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 -1px 0 1px var(--bubble-user-color);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        &.bubble-painted::after {
+            background-color: transparent;
+            box-shadow: none;
+            filter: var(--bubble-name-filter, none);
+        }
+
+        &.highlighted-message::before {
+            @include highlight.background;
+            animation: highlight-gradient 5s linear infinite;
+        }
+
+        &.first-message-background::before {
+            background: var(--first-message-background);
+            animation: none;
+        }
+    }
+
+    .message-content {
+        display: contents;
+        margin: 0;
+        font-size: 0; // Hide the existing ": " text node without changing the HTML.
+        line-height: 0;
+
+        > .provider-icon {
+            grid-area: header / provider;
+            align-self: center;
+            margin-left: var(--bubble-provider-margin);
+            z-index: 1;
+        }
+
+        > .badges {
+            grid-area: header / badges;
+            align-self: center;
+            padding-left: var(--bubble-badges-padding);
+            z-index: 1;
+        }
+    }
+
+    .name {
+        grid-area: header / username;
+        align-self: center;
+        min-width: 0;
+        padding: var(--bubble-name-padding);
+        font-weight: var(--username-weight, 400);
+        line-height: 1.2;
+        z-index: 1;
+    }
+
+    .body {
+        --emote-size: calc(var(--bubble-emote-base) * var(--bubble-emote-scale, 1));
+        grid-area: body / provider / end / end;
+        display: block;
+        min-width: 0;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+        margin-top: calc(-1 * var(--bubble-overlap));
+        margin-inline: var(--bubble-body-margin);
+        padding: var(--bubble-content-inset) var(--bubble-padding) var(--bubble-padding);
+        color: inherit;
+        font-weight: 400;
+        line-height: var(--message-line-height, 1.2);
+
+        &.bubble-single-emote {
+            text-align: center;
+        }
+    }
+
+    .reply-context {
+        grid-area: reply / provider / header / end;
+        margin: 0 0 var(--reply-gap, 8px);
+        margin-inline: var(--bubble-body-margin);
+        padding: 0;
+        background: none;
+        font-size: var(--bubble-reply-scale);
+        color: var(--bubble-reply-color);
+    }
+
+    .first-message-label {
+        grid-area: notice / provider / body / end;
+        margin: calc(-1 * var(--bubble-overlap)) 0 0;
+        margin-inline: var(--bubble-body-margin);
+        padding: var(--bubble-content-inset) var(--bubble-padding) 0;
+        text-align: right;
+
+        ~ .message-content > .body {
+            margin-top: 0;
+            padding-top: var(--bubble-notice-gap);
+        }
+    }
+
+    .badge {
+        vertical-align: middle;
+        margin-right: var(--bubble-badge-margin);
+    }
+
+    .action .body {
+        font-family: var(--text-font-family);
+        font-style: italic;
+    }
+
+    .action .emote {
+        transform: skew(-5deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #chat[data-template='bubble-chat'] .message.highlighted-message::before {
+        animation: none;
+    }
+}

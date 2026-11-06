@@ -1,0 +1,66 @@
+@use '../../styles/highlight';
+
+#chat:is(:not([data-template]), [data-template='classic']) {
+    .message {
+        .message-background & {
+            background-color: var(--message-background, rgba(0, 0, 0, 0.3));
+            padding: var(--classic-message-padding);
+            border-radius: var(--classic-message-radius);
+        }
+        &.channel-points-redemption {
+            padding: var(--classic-box-padding);
+            border-inline-start: var(--classic-box-border-width) solid
+                var(--classic-redemption-border);
+        }
+        &.first-message {
+            padding: var(--classic-box-padding);
+            border-inline-start: var(--classic-box-border-width) solid
+                var(--classic-first-message-border);
+            border-radius: var(--classic-box-radius);
+        }
+        &.first-message-background {
+            background-image: linear-gradient(
+                var(--first-message-background, rgba(151, 71, 255, 0.55)),
+                var(--first-message-background, rgba(151, 71, 255, 0.55))
+            );
+        }
+        &.action {
+            .body {
+                font-family: var(--username-font-family, inherit);
+                font-size: var(--font-size);
+                font-weight: var(--username-weight, 400);
+            }
+        }
+    }
+    .message.highlighted-message {
+        padding: var(--classic-box-padding);
+        border-inline-start: var(--classic-box-border-width) solid
+            var(--classic-first-message-border);
+        border-radius: var(--classic-box-radius);
+
+        &:not(.first-message-background) {
+            @include highlight.background;
+            animation: highlight-gradient 5s linear infinite;
+
+            .animated & {
+                animation:
+                    appear 0.22s ease-out both,
+                    highlight-gradient 5s linear infinite;
+            }
+
+            .animated &.leaving {
+                animation:
+                    disappear 0.22s ease-in both,
+                    highlight-gradient 5s linear infinite;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                &,
+                .animated &,
+                .animated &.leaving {
+                    animation: none;
+                }
+            }
+        }
+    }
+}

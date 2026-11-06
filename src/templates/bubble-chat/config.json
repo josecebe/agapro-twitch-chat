@@ -1,0 +1,32 @@
+{
+    "id": "bubble-chat",
+    "name": "Bubble Chat",
+    "order": 10,
+    "presentation": {
+        "glyphSpacing": false,
+        "paintActionText": false
+    },
+    "settings": {
+        "nameColor": "#ffffff",
+        "singleEmoteScale": 4,
+        "multipleEmoteScale": 2
+    },
+    "variables": {
+        "--bubble-frame-padding": "30px",
+        "--bubble-overlap": "21px",
+        "--bubble-padding": "15.75px",
+        "--bubble-content-inset": "calc(var(--bubble-overlap) + var(--bubble-padding))",
+        "--bubble-emote-base": "var(--emote-size)",
+        "--bubble-header-min-height": "34px",
+        "--bubble-body-radius": "30px / 25px",
+        "--bubble-body-margin": "15px",
+        "--bubble-name-radius": "30px",
+        "--bubble-name-padding": "8px 20px 8px 10px",
+        "--bubble-provider-margin": "8px",
+        "--bubble-badges-padding": "14px",
+        "--bubble-badge-margin": "5.25px",
+        "--bubble-reply-scale": "0.72em",
+        "--bubble-reply-color": "#f4f4f5",
+        "--bubble-notice-gap": "4px"
+    }
+}

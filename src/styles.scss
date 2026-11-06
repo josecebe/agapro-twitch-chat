@@ -52,30 +52,6 @@ body {
         flex: 0 0 auto;
     }
 
-    .message-background & {
-        background-color: var(--message-background, rgba(0, 0, 0, 0.3));
-        padding: 0.2em 0.35em;
-        border-radius: 0.15em;
-    }
-
-    &.channel-points-redemption {
-        padding: 0.35em 0.55em;
-        border-inline-start: 3px solid #aaa3b2;
-    }
-
-    &.first-message {
-        padding: 0.35em 0.55em;
-        border-inline-start: 3px solid #d946ef;
-        border-radius: 0 0.2em 0.2em 0;
-    }
-
-    &.first-message-background {
-        background-image: linear-gradient(
-            var(--first-message-background, rgba(151, 71, 255, 0.55)),
-            var(--first-message-background, rgba(151, 71, 255, 0.55))
-        );
-    }
-
     .shadow & {
         text-shadow:
             0 1px 3px #000,
@@ -97,22 +73,10 @@ body {
             }
         }
     }
-
-    &.action {
-        .body {
-            font-family: var(--username-font-family, inherit);
-            font-size: var(--font-size);
-            font-weight: var(--username-weight, 400);
-        }
-    }
 }
 
 .redemption-context {
-    margin-bottom: 0.2em;
-    color: #d4ccd9;
-    font-family: var(--text-font-family, inherit);
-    font-size: 0.72em;
-    line-height: 1.3;
+    display: none;
 }
 
 .first-message-label {
@@ -228,6 +192,11 @@ body {
     }
 }
 
+.shared-chat-icon {
+    border-radius: 25%;
+    object-fit: cover;
+}
+
 .provider-icon {
     width: var(--provider-icon-size, 20px);
     height: var(--provider-icon-size, 20px);
@@ -336,14 +305,17 @@ body {
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent;
     text-shadow: none;
+}
 
-    .shadow & {
-        // Match .shadow .message: blur radii 3/2/1px become SVG deviations 1.5/1/0.5.
-        // Draw each black shadow from SourceAlpha independently, then the original paint.
-        // Chained drop-shadow() filters also shadow earlier shadows and darken the result.
-        // An equipped paint's inline filter replaces this default.
-        filter: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22s%22%20x%3D%22-50%25%22%20y%3D%22-50%25%22%20width%3D%22200%25%22%20height%3D%22200%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeGaussianBlur%20in%3D%22SourceAlpha%22%20stdDeviation%3D%221.5%22%20result%3D%22b1%22%2F%3E%3CfeOffset%20in%3D%22b1%22%20dy%3D%221%22%20result%3D%22s1%22%2F%3E%3CfeGaussianBlur%20in%3D%22SourceAlpha%22%20stdDeviation%3D%221%22%20result%3D%22s2%22%2F%3E%3CfeGaussianBlur%20in%3D%22SourceAlpha%22%20stdDeviation%3D%220.5%22%20result%3D%22b3%22%2F%3E%3CfeOffset%20in%3D%22b3%22%20dx%3D%221%22%20dy%3D%221%22%20result%3D%22s3%22%2F%3E%3CfeFlood%20flood-color%3D%22black%22%20result%3D%22black%22%2F%3E%3CfeComposite%20in%3D%22black%22%20in2%3D%22s1%22%20operator%3D%22in%22%20result%3D%22c1%22%2F%3E%3CfeComposite%20in%3D%22black%22%20in2%3D%22s2%22%20operator%3D%22in%22%20result%3D%22c2%22%2F%3E%3CfeComposite%20in%3D%22black%22%20in2%3D%22s3%22%20operator%3D%22in%22%20result%3D%22c3%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22c1%22%2F%3E%3CfeMergeNode%20in%3D%22c2%22%2F%3E%3CfeMergeNode%20in%3D%22c3%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fsvg%3E#s');
-    }
+.shadow :is(.emote-stack, .chat-gif, .cheer-icon, .provider-icon, .link-favicon):not(.painted *),
+.shadow .painted {
+    // Match .shadow .message: blur radii 3/2/1px become SVG deviations 1.5/1/0.5.
+    // Draw each black shadow from SourceAlpha independently, then the original paint.
+    // Chained drop-shadow() filters also shadow earlier shadows and darken the result.
+    // Filter stacked emotes as one image, never each overlay. Media inside a
+    // painted span already receives its parent's filter. Native emoji inherit text-shadow.
+    // Equipped paints keep their own inline filter.
+    filter: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22s%22%20x%3D%22-50%25%22%20y%3D%22-50%25%22%20width%3D%22200%25%22%20height%3D%22200%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeGaussianBlur%20in%3D%22SourceAlpha%22%20stdDeviation%3D%221.5%22%20result%3D%22b1%22%2F%3E%3CfeOffset%20in%3D%22b1%22%20dy%3D%221%22%20result%3D%22s1%22%2F%3E%3CfeGaussianBlur%20in%3D%22SourceAlpha%22%20stdDeviation%3D%221%22%20result%3D%22s2%22%2F%3E%3CfeGaussianBlur%20in%3D%22SourceAlpha%22%20stdDeviation%3D%220.5%22%20result%3D%22b3%22%2F%3E%3CfeOffset%20in%3D%22b3%22%20dx%3D%221%22%20dy%3D%221%22%20result%3D%22s3%22%2F%3E%3CfeFlood%20flood-color%3D%22black%22%20result%3D%22black%22%2F%3E%3CfeComposite%20in%3D%22black%22%20in2%3D%22s1%22%20operator%3D%22in%22%20result%3D%22c1%22%2F%3E%3CfeComposite%20in%3D%22black%22%20in2%3D%22s2%22%20operator%3D%22in%22%20result%3D%22c2%22%2F%3E%3CfeComposite%20in%3D%22black%22%20in2%3D%22s3%22%20operator%3D%22in%22%20result%3D%22c3%22%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D%22c1%22%2F%3E%3CfeMergeNode%20in%3D%22c2%22%2F%3E%3CfeMergeNode%20in%3D%22c3%22%2F%3E%3CfeMergeNode%20in%3D%22SourceGraphic%22%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fsvg%3E#s');
 }
 
 #diagnostics {

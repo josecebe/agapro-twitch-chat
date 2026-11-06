@@ -332,6 +332,35 @@ test('Users keep separate mention paints and removing a paint restores color', (
     assert.equal(mention.style.color, '#b8b2ff');
     assert.equal(mention.style.backgroundImage, '');
 });
+test('Mentions and reply users share the username gradient until a 7TV paint applies', () => {
+    const previous = r.config;
+    r.config = { ...previous, usernameGradient: true, showSevenTVPaints: true };
+    r.rememberColor('grad', 'Grad', '#204080');
+    const node = new Node();
+    r.appendText(node, '@grad');
+    r.root.append(node);
+    const mention = node.querySelectorAll('.mention')[0];
+    assert.ok(mention.classList.contains('painted'));
+    assert.match(mention.style.backgroundImage, /^linear-gradient\(180deg, .*#204080 50%/);
+    r.tombstones ||= new Map();
+    const reply = r.replyContext(
+        { 'reply-parent-msg-id': 'p', 'reply-parent-user-login': 'grad' },
+        'twitch'
+    );
+    const replyUser = reply.mention;
+    r.root.append(reply.node);
+    assert.equal(replyUser.style.backgroundImage, mention.style.backgroundImage);
+    r.rememberColor('grad', 'Grad', '#802040');
+    assert.match(mention.style.backgroundImage, /#802040 50%/);
+    assert.match(replyUser.style.backgroundImage, /#802040 50%/);
+    r.rememberPaint('grad', 'Grad', gradient);
+    assert.equal(mention.style.backgroundImage, gradient.backgroundImage);
+    r.rememberColor('grad', 'Grad', '#408020');
+    assert.equal(mention.style.backgroundImage, gradient.backgroundImage);
+    r.rememberPaint('grad', 'Grad', null);
+    assert.match(mention.style.backgroundImage, /#408020 50%/);
+    r.config = previous;
+});
 test('Failed paint textures restore a readable username color', () => {
     const node = new Node();
     node.style.color = '#123456';
@@ -561,6 +590,36 @@ sharedRenderer.add({
 test('Late Shared Chat assets preserve source-id deduplication', () =>
     assert.equal(sharedRenderer.rows.length, 1));
 sourceAssets.stop();
+test('Shared Chat origin icon is the first badge, optional and independent of badges', () => {
+    const renderer = Object.create(A.Renderer.prototype);
+    const requested = [];
+    renderer.assets = {
+        channelAvatar: (id) => {
+            requested.push(id);
+            return {
+                src: 'https://static-cdn.jtvnw.net/jtv_user_pictures/' + id + '.png',
+                name: 'Chan' + id
+            };
+        },
+        badge: () => ({ title: 'Mod', image_url_1x: 'https://static-cdn.jtvnw.net/badges/v1/m/1' })
+    };
+    const tags = { 'room-id': '100', 'source-room-id': '200', badges: 'moderator/1' };
+    const render = (config, messageTags = tags) => {
+        renderer.config = config;
+        const node = new Node();
+        renderer.badges(node, messageTags);
+        return node.children;
+    };
+    const shown = render({ showBadges: true });
+    assert.equal(shown.length, 2);
+    assert.equal(shown[0].className, 'badge shared-chat-icon');
+    assert.equal(shown[0].title, 'Chan200');
+    assert.equal(shown[1].title, 'Mod');
+    assert.equal(render({ showBadges: false })[0].className, 'badge shared-chat-icon');
+    assert.equal(render({ showBadges: true, showSharedChatIcon: false }).length, 1);
+    assert.equal(render({ showBadges: true }, { badges: 'moderator/1' }).length, 1);
+    assert.deepEqual(requested, ['200', '200']);
+});
 test('Provider icons use DuckDuckGo and handle visibility and unknown providers', () => {
     const renderer = Object.create(r);
     renderer.config = {

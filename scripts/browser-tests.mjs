@@ -7,6 +7,8 @@ for (const suite of [
     'browser-cleanup-check',
     'spacing-browser-check',
     'emote-stack-browser-check',
+    'templates-browser-check',
+    'bubble-spacing-browser-check',
     'visible-spacing-browser-check',
     'paint-browser-check',
     'links-browser-check',

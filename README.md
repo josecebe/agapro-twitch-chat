@@ -90,9 +90,15 @@ For Streamlabs, edit the readable `config` object at the top of the JS tab and s
 
 You can adjust fonts, text/emote/badge sizes, colors, backgrounds, shadows, message limits, spacing, replies, GIFs, and 7TV effects. In local configuration, use `true` and `false` without quotes.
 
+- **Style template:** `template: 'classic'` (the default) preserves the existing appearance and all your appearance settings. Select **Appearance → Style template → Bubble Chat** in StreamElements, or set `template: 'bubble-chat'` in local/Streamlabs configuration, for the built-in Animal Crossing bubble style: colored name pills, rounded translucent black message backgrounds, Aclonica usernames and Arial Black messages. **Text size** (`fontSizePx`) controls the username and message size in both templates; reply text scales proportionally. In Bubble Chat, **Background color and opacity** controls the text bubble background, including full transparency, without changing the name pill. Ordinary text bubbles fit their content and can grow to the full available width for long messages. First messages and Channel Points messages always fill the available width; name pills keep their natural width. **First-message color and opacity** sets the first-message bubble background when **First-message background** is enabled. Message spacing uses `messageGapPx` in both templates. Local and Google Font controls for the general font, usernames, and message text work in both templates, including inheritance from the general font when a role is empty. Interline spacing, reply spacing, badge size and emote size also use the shared settings. Emote-only bubbles enlarge emotes relative to the configured emote size, and long messages have no theme-specific height limit. All **Typography** controls are shared: size, fonts, bold usernames/mentions, localized logins, message color/opacity and text shadow; switching back to Classic restores those controls' values. Channels, filters, replies, moderation and other chat behavior remain shared. Both templates use the same HTML and chat engine.
+
 - **Language:** English is the default. Use `language: 'es'` for Spanish, or select **Language → Chat language** in StreamElements.
 - **Message spacing:** `messageGapPx` sets the space between messages; `replyGapPx` sets the space below reply headers. Use `0` for no additional gap.
 - **Message lifetime:** `messageLifetimeSeconds: 0` keeps messages until they leave the display or are removed. Set a positive value to expire them after that many seconds.
+- **Line height:** `messageLineHeight` is a multiplier of the visible letter height of the message font (tallest ascender to lowest descender): `1` makes consecutive lines practically touch, `2` doubles that spacing, and so on up to `3`. Emotes and emoji taller than the text can overlap slightly at `1`.
+- **Shared Chat channel icon:** while a Twitch Shared Chat session is active, every message shows its origin channel's avatar as the first badge, so you can tell which streamer's chat it came from. It appears even when badges are hidden. Turn it off with **Badges, icons and paints → Shared Chat: show origin channel icon first** or `showSharedChatIcon: false`.
+- **Nick gradients:** enable **Typography → Gradient for normal Twitch nick colors**, or set `usernameGradient: true`, to shade the normal nick color from a slightly lighter top through its original color in the middle to a darker bottom. Bubble Chat applies it to the name pill and keeps the letters white; Classic applies it to the nickname text. Mentions and the "reply to" user use the same gradient as plain text. Equipped 7TV paints take priority. Disabled by default.
+- **Highlighted messages:** Twitch highlighted messages use the same animated pastel background in both templates. Classic displays it in a box with the same border and corners as first messages. Reduced-motion settings keep the gradient static.
 - **GIFs:** `showTwitchGifs: true` displays images. With `false`, they appear as a `GIF` label.
 - **Fonts:** local font families must be installed on the OBS computer. Use the Google Font settings to load an online font instead.
 
@@ -110,4 +116,10 @@ In Streamlabs, set `demo: true` or `debug: true` in the JS configuration to prev
 
 Run `npm run build` after changing the widget source, then refresh the OBS source or copy the updated files into StreamElements or Streamlabs again. To keep Streamlabs configuration edits across builds, also update the root `config.js`.
 
-Styles are edited in `src/styles.scss`. To rebuild only the development stylesheet, run `npm run build:css`; to rebuild it automatically while editing, run `npm run watch:css`.
+Shared styles are edited in `src/styles.scss`; each template owns its stylesheet under `src/templates/`. Run `npm run build:css` to regenerate the development stylesheet and template bundle, or `npm run watch:css` to regenerate them while editing.
+
+### Theme implementation
+
+Each template has its own `src/templates/<id>/config.json` and `style.scss`, plus an optional `presentation.mjs`. The build discovers templates and generates registration, CSS and the StreamElements selector automatically. `src/templates/registry.mjs` resolves IDs through a map; the shared renderer contains no per-template branches. Template configuration stays separate from shared user settings and chat behavior. Shared highlighted-message backgrounds live in `src/styles/_highlight.scss`.
+
+See [the template guide](src/templates/README.md) for the folder format and presentation hooks.

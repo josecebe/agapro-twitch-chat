@@ -5,8 +5,10 @@
         window.CHAT_WIDGET_RUNTIME?.stop?.();
         const query = new URLSearchParams(location.search);
         const normalized = ChatWidget.normalizeSources(input.sources);
+        const template = ChatWidget.templates.get(input.template).id;
         const config = {
             ...input,
+            template,
             language: ChatWidget.i18n.normalizeLanguage(input.language),
             sources: normalized.sources,
             maxMessages: Math.round(ChatWidget.clamp(input.maxMessages, 1, 200, 35)),
@@ -45,6 +47,7 @@
             config.showChannelPointRedemptions === false ? t('pointsHidden') : t('pointsLimited')
         );
         const root = document.getElementById('chat');
+        root.setAttribute?.('data-template', template);
         root.setAttribute?.('aria-label', t('liveChat'));
         root.replaceChildren?.();
         root.classList.toggle('top', config.layout === 'stack-top');
@@ -118,10 +121,27 @@
         }
         document.documentElement.style.setProperty('--username-font-family', fonts.username);
         document.documentElement.style.setProperty('--text-font-family', fonts.text);
-        document.documentElement.style.setProperty(
-            '--message-line-height',
-            String(ChatWidget.clamp(config.messageLineHeight, 1, 3, 1.5))
-        );
+        const lineHeightScale = ChatWidget.clamp(config.messageLineHeight, 1, 3, 1);
+        // 1 = the visible letter height of the message font (tallest ascender to lowest
+        // descender), so consecutive lines practically touch; 2 = twice that.
+        const fontSize = ChatWidget.clamp(config.fontSizePx, 12, 100, 25);
+        const applyLineHeight = () => {
+            let ascent = 0;
+            let descent = 0;
+            try {
+                const context = (applyLineHeight.canvas ||=
+                    document.createElement('canvas')).getContext('2d');
+                context.font = `${fontSize}px ${fonts.text}`;
+                const ink = context.measureText('Hbdfklgjpqy');
+                ascent = ink.actualBoundingBoxAscent || 0;
+                descent = ink.actualBoundingBoxDescent || 0;
+            } catch {}
+            const ink = ascent + descent > 0 ? ascent + descent : fontSize;
+            document.documentElement.style.setProperty(
+                '--message-line-height',
+                Math.round(ink * lineHeightScale * 100) / 100 + 'px'
+            );
+        };
         document.documentElement.style.setProperty(
             '--message-gap',
             ChatWidget.clamp(config.messageGapPx, 0, 100, 8) + 'px'
@@ -152,6 +172,7 @@
         );
         document.body.style.fontFamily = fonts.general;
         document.body.style.color = ChatWidget.resolveColor(config.textColor, '#ffffff').css;
+        applyLineHeight();
         const fetchAssets = ChatWidget.sharedAssetFetcher();
         const sources = config.sources.map((source) => ({
             ...source,
@@ -178,8 +199,12 @@
         };
         window.CHAT_WIDGET_RUNTIME = runtime;
         const resize = () => renderer.fit();
+        const fontsLoaded = () => {
+            applyLineHeight();
+            renderer.fit();
+        };
         window.addEventListener('resize', resize);
-        document.fonts?.addEventListener('loadingdone', resize);
+        document.fonts?.addEventListener('loadingdone', fontsLoaded);
         let demoController;
         if (demo) {
             report('mode', t('demoNotice'));
@@ -258,7 +283,7 @@
             runtime.stopped = true;
             demoController?.stop();
             window.removeEventListener?.('resize', resize);
-            document.fonts?.removeEventListener('loadingdone', resize);
+            document.fonts?.removeEventListener('loadingdone', fontsLoaded);
             window.removeEventListener?.('online', reconnect);
             window.removeEventListener?.('pagehide', runtime.stop);
             for (const connection of connections) {

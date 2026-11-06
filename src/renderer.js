@@ -1,6 +1,26 @@
 (function (ChatWidget) {
     'use strict';
 
+    function usernameGradient(color) {
+        const channels = color
+            .slice(1)
+            .match(/.{2}/g)
+            .map((channel) => parseInt(channel, 16));
+        const top = channels.map((channel) => Math.round(channel + (255 - channel) * 0.3));
+        const bottom = channels.map((channel) => Math.round(channel * 0.85));
+        return `linear-gradient(180deg, rgb(${top.join(',')}) 0%, ${color} 50%, rgb(${bottom.join(',')}) 100%)`;
+    }
+
+    function watchPaintImages(renderer, node, css) {
+        for (const match of css.backgroundImage.matchAll(/url\("([^"]+)"\)/g)) {
+            const img = new Image();
+            img.onerror = () => {
+                if (node._chatPaint === css) renderer.applyPaint(node, null);
+            };
+            img.src = match[1];
+        }
+    }
+
     ChatWidget.Renderer = class {
         constructor(root, config, assets, paints) {
             Object.assign(this, {
@@ -44,7 +64,15 @@
             node.replaceChildren();
             node.append(document.createTextNode(name), suffix);
         }
+        colorMention(node, color) {
+            node.style.color = color;
+            if (!this.config.usernameGradient) return;
+            const usingBase = !node._chatPaint || node._chatPaint === node._basePaint;
+            node._basePaint = { backgroundImage: usernameGradient(color), filter: '' };
+            if (usingBase) this.applyPaint(node, null);
+        }
         applyPaint(node, css) {
+            css = css || node._basePaint || null;
             if (node._chatPaint === css) {
                 return;
             }
@@ -52,6 +80,17 @@
             node.classList.remove('painted');
             node.style.backgroundImage = '';
             node.style.filter = '';
+            const authorBackground = ChatWidget.templates
+                .get(this.config?.template)
+                .paintAuthor?.(node, css);
+            if (authorBackground !== undefined) {
+                if (!authorBackground && css && node._basePaint && css !== node._basePaint) {
+                    this.applyPaint(node, null);
+                    return;
+                }
+                if (authorBackground) watchPaintImages(this, node, css);
+                return;
+            }
             const replyHeading = node.classList.contains('reply-user')
                 ? node.closest?.('.reply-heading')
                 : null;
@@ -62,6 +101,7 @@
             const probe = document.createElement('span');
             probe.style.backgroundImage = css.backgroundImage;
             if (!probe.style.backgroundImage) {
+                if (node._basePaint && css !== node._basePaint) this.applyPaint(node, null);
                 return;
             }
             Object.assign(node.style, css, {
@@ -84,15 +124,7 @@
                 if (bleed)
                     replyHeading.style.setProperty('--reply-paint-bleed', Math.ceil(bleed) + 'px');
             }
-            for (const match of css.backgroundImage.matchAll(/url\("([^"]+)"\)/g)) {
-                const img = new Image();
-                img.onerror = () => {
-                    if (node._chatPaint === css) {
-                        this.applyPaint(node, null);
-                    }
-                };
-                img.src = match[1];
-            }
+            watchPaintImages(this, node, css);
         }
         assetsFor(provider = 'twitch', sourceId = '') {
             if (sourceId && this.sourceAssets) {
@@ -163,7 +195,7 @@
                         aliases.has(mention.dataset.login) &&
                         !mention.dataset.preview
                     ) {
-                        mention.style.color = color;
+                        this.colorMention(mention, color);
                     }
                 }
             }
@@ -247,7 +279,7 @@
                 const key = ChatWidget.providerKey(provider, span.dataset.login);
                 const color = this.userColors.get(key);
                 if (color && !preview) {
-                    span.style.color = color;
+                    this.colorMention(span, color);
                 }
                 if (this.config.showSevenTVPaints && !preview) {
                     this.applyPaint(span, this.userPaints.get(key) || null);
@@ -310,7 +342,9 @@
             mention.textContent = '@' + displayName;
             mention.dataset.login = login;
             mention.dataset.provider = 'twitch';
-            mention.style.color = this.userColors.get(login) || '#b8b2ff';
+            const color = this.userColors.get(login);
+            if (color) this.colorMention(mention, color);
+            else mention.style.color = '#b8b2ff';
             if (this.config.showSevenTVPaints) {
                 this.applyPaint(mention, this.userPaints.get(login) || null);
             }
@@ -601,7 +635,7 @@
                 };
             }
             img.onerror = () => {
-                if (className === 'badge' || className === 'provider-icon') {
+                if (/^(badge|provider-icon)\b/.test(className)) {
                     img.remove();
                 } else {
                     const fallbackText = document.createTextNode(alt);
@@ -625,10 +659,23 @@
         }
         badges(node, tags, sevenTVBadge = null, provider = 'twitch', sourceId = '') {
             node.replaceChildren();
+            const assets = this.assetsFor(provider, sourceId);
+            // Twitch only sends source-room-id during a Shared Chat session, so every
+            // message, including the host channel's, then gets its origin channel icon.
+            const sharedRoom = tags['source-room-id'];
+            if (
+                provider === 'twitch' &&
+                this.config.showSharedChatIcon !== false &&
+                /^\d+$/.test(sharedRoom || '')
+            ) {
+                const avatar = assets?.channelAvatar?.(sharedRoom);
+                if (avatar) {
+                    node.append(this.image(avatar.src, avatar.name, 'badge shared-chat-icon'));
+                }
+            }
             if (!this.config.showBadges) {
                 return;
             }
-            const assets = this.assetsFor(provider, sourceId);
             const hasSourceBadges =
                 /^\d+$/.test(tags['source-room-id'] || '') &&
                 typeof tags['source-badges'] === 'string';
@@ -772,12 +819,14 @@
                 }
             }
             flush();
+            ChatWidget.templates.get(this.config.template).styleBody?.(node);
         }
         add(message) {
             if (message.provider && message.provider !== 'twitch') {
                 return;
             }
             const provider = message.provider || 'twitch';
+            const theme = ChatWidget.templates.get(this.config.template);
             const sourceId = message.sourceId || '';
             const tags = message.tags;
             const login = message.prefix.split('!')[0].toLowerCase();
@@ -790,7 +839,8 @@
             if (ChatWidget.hideMessage(this.config, login, rawText)) {
                 return;
             }
-            const userColor = /^#[0-9a-f]{6}$/i.test(tags.color || '') ? tags.color : '#b8b2ff';
+            const hasUserColor = /^#[0-9a-f]{6}$/i.test(tags.color || '');
+            const userColor = hasUserColor ? tags.color : '#b8b2ff';
             this.rememberColor(login, tags['display-name'], userColor, provider);
             const stamp = Number(tags['tmi-sent-ts']) || now;
             const roomClear = sourceId ? this.roomClears?.get(sourceId) || 0 : this.roomClear;
@@ -836,7 +886,11 @@
             }
             const row = document.createElement('div');
             row.className = 'message';
+            if (tags['msg-id'] === 'highlighted-message') {
+                row.classList.add('highlighted-message');
+            }
             const badges = document.createElement('span');
+            badges.className = 'badges';
             const name = document.createElement('span');
             const body = document.createElement('span');
             name.className = 'name';
@@ -845,7 +899,10 @@
                 .replace(/^#/, '')
                 .toLowerCase();
             this.renderUsername(name, login, tags['display-name']);
-            name.style.color = userColor;
+            name.style.color = theme.authorColor?.(row, userColor, { hasUserColor }) || userColor;
+            if (this.config.usernameGradient) {
+                name._basePaint = { backgroundImage: usernameGradient(userColor), filter: '' };
+            }
             name.dir = 'auto';
             body.dir = 'auto';
             let text = message.params[message.params.length - 1] || '';
@@ -855,7 +912,7 @@
                 text = text.slice(8, -1);
                 row.classList.add('action');
                 body.classList.add('action-body');
-                body.style.color = userColor;
+                if (theme.paintActionText) body.style.color = userColor;
                 gifs = this.shiftGifs(gifs, -8);
                 emotes = emotes.replace(
                     /(\d+)-(\d+)/g,
@@ -884,6 +941,7 @@
             }
             const reply = this.replyContext(tags, provider, sourceId, body._chatChannel);
             if (reply) {
+                row.classList.add('has-reply');
                 row.append(reply.node);
             }
             const originalLength = Array.from(text).length;
@@ -902,6 +960,7 @@
                 body
             );
             row.append(content);
+            if (name._basePaint) this.applyPaint(name, null);
             const record = {
                 row,
                 content,
@@ -950,7 +1009,7 @@
                         if (this.config.showSevenTVPaints) {
                             const css = cosmetics?.paint || null;
                             this.applyPaint(name, css);
-                            if (row.classList.contains('action')) {
+                            if (row.classList.contains('action') && theme.paintActionText) {
                                 this.applyPaint(body, css);
                             }
                             this.rememberPaint(login, tags['display-name'], css, provider);
@@ -988,7 +1047,11 @@
             };
             // Read all rows before applying layout changes. Media and label
             // backgrounds retain their full bounds, including in reply previews.
-            const spacing = this.rows.flatMap((record) =>
+            // Bubble panels use their CSS padding; Classic keeps visible-glyph spacing.
+            const spacingRows = ChatWidget.templates.get(this.config.template).glyphSpacing
+                ? this.rows
+                : [];
+            const spacing = spacingRows.flatMap((record) =>
                 [record.reply?.node, record.content].flatMap((content) => {
                     if (!content?.getBoundingClientRect) return [];
                     const bounds = content.getBoundingClientRect();
@@ -998,7 +1061,10 @@
                               .filter(
                                   (node) => node && getComputedStyle(node).overflowY !== 'visible'
                               )
-                              .map((node) => ({ node, bounds: node.getBoundingClientRect() }))
+                              .map((node) => ({
+                                  node,
+                                  bounds: node.getBoundingClientRect()
+                              }))
                         : [];
                     const visibleRect = (rect, node) => {
                         const clip = clips.find((clip) => clip.node.contains(node));

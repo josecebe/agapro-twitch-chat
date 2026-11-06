@@ -181,6 +181,67 @@ try {
         await artifactPath('paint-glow-comparison.png'),
         Buffer.from(comparison.data, 'base64')
     );
+    const mediaShadows = await browser.evaluate(`(async () => {
+        const results = [];
+        for (const template of ['classic', 'bubble-chat']) {
+            document.body.innerHTML = '<main id="chat" data-template="' + template + '"><div class="message"></div></main>';
+            const row = document.querySelector('.message');
+            const name = document.createElement('span');
+            name.className = 'name painted';
+            name.textContent = 'Nickname';
+            name.style.backgroundImage = 'linear-gradient(red, blue)';
+            const media = ['badge', 'badge', 'chat-gif', 'cheer-icon', 'provider-icon', 'link-favicon'].map(className => {
+                const badge = new Image();
+                badge.className = className; badge.alt = className;
+                badge.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30"><circle cx="15" cy="15" r="10" fill="white"/></svg>');
+                row.append(badge);
+                return badge;
+            });
+            const stack = document.createElement('span');
+            stack.className = 'emote-stack';
+            const layers = [false,true].map(overlay => {
+                const img = new Image();
+                img.className = 'emote' + (overlay ? ' overlay' : '');
+                img.src = media[0].src;
+                stack.append(img);
+                return img;
+            });
+            const emoji = document.createElement('span');
+            emoji.textContent = '😀';
+            row.append(stack,emoji);
+            media.push(stack);
+            row.append(name);
+            await Promise.all([...media.filter(node=>node.tagName==='IMG'),...layers].map(img=>img.decode()));
+            document.body.classList.add('shadow');
+            const expected = getComputedStyle(name).filter;
+            const enabled = media.map(node=>getComputedStyle(node).filter);
+            const sizes = media.map(node=>node.getBoundingClientRect().width);
+            const overlayFilters = layers.map(node=>getComputedStyle(node).filter);
+            const emojiShadow = getComputedStyle(emoji).textShadow;
+            const paintedContainer = document.createElement('span');
+            paintedContainer.className = 'painted';
+            const nestedStack = stack.cloneNode(true);
+            paintedContainer.append(nestedStack);
+            row.append(paintedContainer);
+            const nestedFilter = getComputedStyle(nestedStack).filter;
+            document.body.classList.remove('shadow');
+            results.push({expected, enabled, disabled:media.map(node=>getComputedStyle(node).filter),
+                overlayFilters, nestedFilter, emojiShadow, emojiDisabled:getComputedStyle(emoji).textShadow,
+                sizes, sizesWithoutShadow:media.map(node=>node.getBoundingClientRect().width)});
+        }
+        return results;
+    })()`);
+    for (const shadows of mediaShadows) {
+        assert.notEqual(shadows.expected, 'none');
+        assert.deepEqual(shadows.enabled.slice(0, 2), ['none', 'none']);
+        assert.ok(shadows.enabled.slice(2).every((filter) => filter === shadows.expected));
+        assert.ok(shadows.disabled.every((filter) => filter === 'none'));
+        assert.deepEqual(shadows.overlayFilters, ['none', 'none']);
+        assert.equal(shadows.nestedFilter, 'none');
+        assert.notEqual(shadows.emojiShadow, 'none');
+        assert.equal(shadows.emojiDisabled, 'none');
+        assert.deepEqual(shadows.sizes, shadows.sizesWithoutShadow);
+    }
     console.log(
         'PASS screenshot pixels match the raw 7TV shadow definitions; both outer glows render and Twitch textShadow adds no extra shadow'
     );

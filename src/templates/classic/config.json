@@ -1,0 +1,19 @@
+{
+    "id": "classic",
+    "name": "Classic",
+    "order": 0,
+    "default": true,
+    "presentation": {
+        "glyphSpacing": true,
+        "paintActionText": true
+    },
+    "variables": {
+        "--classic-message-padding": "0.2em 0.35em",
+        "--classic-message-radius": "0.15em",
+        "--classic-box-padding": "0.35em 0.55em",
+        "--classic-box-border-width": "3px",
+        "--classic-first-message-border": "#d946ef",
+        "--classic-redemption-border": "#aaa3b2",
+        "--classic-box-radius": "0 0.2em 0.2em 0"
+    }
+}
