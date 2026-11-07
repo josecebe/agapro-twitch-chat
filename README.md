@@ -100,6 +100,7 @@ You can adjust fonts, text/emote/badge sizes, colors, backgrounds, shadows, mess
 - **Nick gradients:** enable **Typography → Gradient for normal Twitch nick colors**, or set `usernameGradient: true`, to shade the normal nick color from a slightly lighter top through its original color in the middle to a darker bottom. Bubble Chat applies it to the name pill and keeps the letters white; Classic applies it to the nickname text. Mentions and the "reply to" user use the same gradient as plain text. Equipped 7TV paints take priority. Disabled by default.
 - **Highlighted messages:** Twitch highlighted messages use the same animated pastel background in both templates. Classic displays it in a box with the same border and corners as first messages. Reduced-motion settings keep the gradient static.
 - **GIFs:** `showTwitchGifs: true` displays images. With `false`, they appear as a `GIF` label.
+- **7TV emote files:** selects the smaller WebP 1x or AVIF 1x file. If neither is available, selects the smallest WebP, AVIF or GIF variant from 1x to 4x. Missing sizes sort last within each group; ties prefer WebP, then AVIF, then GIF. Selection uses catalog metadata, without retries after image loading failures.
 - **Fonts:** local font families must be installed on the OBS computer. Use the Google Font settings to load an online font instead.
 
 To keep local configuration changes across builds, also update the root `config.js`: rebuilding replaces `dist/local/config.js` with that file.

@@ -378,6 +378,88 @@ test('7TV aliases, animation and zero-width behavior follow the source flags', (
     assert.equal(m.has('Original'), false);
     assert.equal(m.get('Alias').ratio, 2);
 });
+test('7TV selects the smallest 1x WebP/AVIF before other variants by size', () => {
+    const assets = new A.Assets(() => {});
+    const select = (files) =>
+        assets
+            .normalize(
+                {
+                    emotes: [
+                        {
+                            id: 'id',
+                            name: 'Alias',
+                            data: {
+                                animated: true,
+                                flags: 256,
+                                host: { url: '//cdn.7tv.app/emote/id', files }
+                            }
+                        }
+                    ]
+                },
+                'channel'
+            )
+            .get('Alias');
+    const variants = [
+        { name: '4x.avif', size: 40 },
+        { name: '1x.webp', size: 200 },
+        { name: '2x.gif', size: 30 },
+        { name: '1x.avif', size: 100, width: 64, height: 32 },
+        { name: '2x.webp', size: 50 },
+        { name: '1x_static.webp', size: 1 },
+        { name: '1x.png', size: 1 }
+    ];
+    const base = 'https://cdn.7tv.app/emote/id/';
+    const emote = select(variants);
+    assert.equal(emote.src, base + '1x.avif');
+    assert.equal(emote.animated, true);
+    assert.equal(emote.zeroWidth, true);
+    assert.equal(emote.ratio, 2);
+    assert.equal(emote.origin, 'channel');
+    assert.equal(variants[0].name, '4x.avif');
+    assert.equal(
+        select([
+            { name: '1x.webp', size: 50 },
+            { name: '1x.avif', size: 100 }
+        ]).src,
+        base + '1x.webp'
+    );
+    assert.equal(
+        select(variants.filter((file) => !/^1x\.(webp|avif)$/.test(file.name))).src,
+        base + '2x.gif'
+    );
+    assert.equal(
+        select([
+            { name: '3x.webp', size: 50 },
+            { name: '2x.avif', size: 100 }
+        ]).src,
+        base + '3x.webp'
+    );
+    assert.equal(
+        select([
+            { name: '1x.avif', size: 50 },
+            { name: '1x.webp', size: 50 }
+        ]).src,
+        base + '1x.webp'
+    );
+    for (const size of [undefined, null, 0, -1, NaN, Infinity, '1']) {
+        assert.equal(
+            select([
+                { name: '1x.webp', size },
+                { name: '1x.avif', size: 50 }
+            ]).src,
+            base + '1x.avif'
+        );
+        assert.equal(
+            select([
+                { name: '2x.webp', size },
+                { name: '3x.avif', size: 50 }
+            ]).src,
+            base + '3x.avif'
+        );
+    }
+    assert.equal(select([{ name: '1x.avif' }, { name: '1x.webp' }]).src, base + '1x.webp');
+    assert.equal(select([{ name: '1x_static.webp' }, { name: '1x.png' }]), undefined);
+});
 let calls = 0;
 let active = 0;
 let maxActive = 0;

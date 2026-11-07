@@ -311,10 +311,20 @@
                 if (!files || !emote.name) {
                     continue;
                 }
-                const file =
-                    files.find((candidateFile) => candidateFile.name === '2x.webp') ||
-                    files.find((candidateFile) => candidateFile.format === 'WEBP') ||
-                    files.find((candidateFile) => candidateFile.format === 'GIF');
+                const size = (file) =>
+                    Number.isFinite(file.size) && file.size > 0 ? file.size : Infinity;
+                const preferred = (file) => /^1x\.(webp|avif)$/.test(file.name);
+                const formatRank = (file) =>
+                    ['webp', 'avif', 'gif'].indexOf(file.name.split('.')[1]);
+                const file = files
+                    .filter((candidate) => /^[1-4]x\.(webp|avif|gif)$/.test(candidate.name))
+                    .sort(
+                        (a, b) =>
+                            Number(preferred(b)) - Number(preferred(a)) ||
+                            size(a) - size(b) ||
+                            formatRank(a) - formatRank(b) ||
+                            a.name.localeCompare(b.name)
+                    )[0];
                 if (!file) {
                     continue;
                 }
