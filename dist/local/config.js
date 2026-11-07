@@ -5,17 +5,17 @@ window.CHAT_WIDGET_CONFIG = {
     sources: [
         {
             provider: 'twitch',
-            channel: ''
+            channel: 'lylisoul'
         }
     ],
 
     // Language
     // English is the default; Spanish is available with language: 'es'.
-    language: 'en',
+    language: 'es',
 
     // Appearance
     // Select the visual template; chat behavior is shared.
-    template: 'classic',
+    template: 'bubble-chat',
     messageBackground: false,
     // Alpha controls opacity in both local config and the StreamElements color picker.
     messageBackgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -55,7 +55,7 @@ window.CHAT_WIDGET_CONFIG = {
     showSevenTVEmotes: true,
     emoteSizePx: 34,
     showCheers: true,
-    showTwitchGifs: false,
+    showTwitchGifs: true,
     gifMaxHeightPx: 150,
 
     // Badges, icons and paints

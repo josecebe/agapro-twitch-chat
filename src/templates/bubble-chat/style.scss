@@ -2,6 +2,7 @@
 
 // Theme geometry is scoped here; typography and media sizes use shared controls.
 #chat[data-template='bubble-chat'] {
+    container-type: inline-size;
     align-items: flex-start;
     padding: var(--bubble-frame-padding);
 
@@ -140,8 +141,13 @@
 
     .reply-context {
         grid-area: reply / provider / header / end;
+        // Use the chat's available width without sizing the bubble's grid tracks.
+        width: calc(100cqw - 2 * var(--bubble-body-margin));
+        max-width: none;
         margin: 0 0 var(--reply-gap, 8px);
         margin-inline: var(--bubble-body-margin);
+        // Cancel the preview's intrinsic width so only the header and body size the grid.
+        margin-inline-end: calc(3 * var(--bubble-body-margin) - 100cqw);
         padding: 0;
         background: none;
         font-size: var(--bubble-reply-scale);

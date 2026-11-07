@@ -180,6 +180,50 @@ try {
             'base64'
         )
     );
+    const replyWidths = await browser.evaluate(`(async () => {
+        const results = [];
+        for (const width of [260, 540]) for (const preview of [false, true]) {
+            window.dispatchEvent(new CustomEvent('onWidgetLoad',{detail:{fieldData:{
+                ...${JSON.stringify(data)}, template:'bubble-chat', channelMode:'custom', customChannels:'',
+                enableAnimations:'false', showReplyPreview:String(preview)
+            }}}));
+            const renderer = CHAT_WIDGET_RUNTIME.renderer;
+            renderer.root.style.width = width + 'px';
+            renderer.root.style.height = '6000px';
+            CHAT_WIDGET_RUNTIME.paints.getCosmetics = async () => null;
+            for (const text of ['Hi', 'A longer message that wraps onto several lines. '.repeat(4)]) {
+                const add = tags => renderer.add({prefix:'user!test', tags:{
+                    id:'width-' + renderer.rows.length, 'display-name':'User', ...tags
+                }, params:['#test',text]});
+                add({});
+                add({'reply-parent-msg-id':'parent', 'reply-parent-user-login':'longparentname',
+                    'reply-parent-display-name':'LongParentName',
+                    'reply-parent-msg-body':'A long quoted message. '.repeat(20)});
+            }
+            await document.fonts.ready;
+            renderer.fit();
+            const rect = node => node.getBoundingClientRect();
+            for (let i = 0; i < renderer.rows.length; i += 2) {
+                const plain = renderer.rows[i];
+                const reply = renderer.rows[i + 1];
+                const context = rect(reply.reply.node);
+                results.push({width, preview,
+                    plainWidth:rect(plain.body).width, replyWidth:rect(reply.body).width,
+                    plainHeight:rect(plain.body).height, replyHeight:rect(reply.body).height,
+                    contextWidth:context.width, contextRight:context.right,
+                    availableRight:rect(renderer.root).right - 45});
+            }
+            renderer.root.style.removeProperty('width');
+            renderer.root.style.removeProperty('height');
+        }
+        return results;
+    })()`);
+    for (const item of replyWidths) {
+        assert.ok(Math.abs(item.plainWidth - item.replyWidth) < 1, JSON.stringify(item));
+        assert.ok(Math.abs(item.plainHeight - item.replyHeight) < 1, JSON.stringify(item));
+        assert.ok(Math.abs(item.contextWidth - (item.width - 90)) < 1, JSON.stringify(item));
+        assert.ok(Math.abs(item.contextRight - item.availableRight) < 1, JSON.stringify(item));
+    }
     const longMessage = await browser.evaluate(`(async () => {
         const hostStyle = document.createElement('style');
         hostStyle.textContent = '.message, .body { height:300px; max-height:300px; overflow:hidden; }';
