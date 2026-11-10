@@ -6,6 +6,14 @@ window.CHAT_WIDGET_CONFIG = {
         {
             provider: 'twitch',
             channel: 'lylisoul'
+        },
+        {
+            provider: 'twitch',
+            channel: 'peereira7'
+        },
+        {
+            provider: 'twitch',
+            channel: 'lordjovan'
         }
     ],
 
@@ -15,7 +23,7 @@ window.CHAT_WIDGET_CONFIG = {
 
     // Appearance
     // Select the visual template; chat behavior is shared.
-    template: 'bubble-chat',
+    template: 'classic',
     messageBackground: false,
     // Alpha controls opacity in both local config and the StreamElements color picker.
     messageBackgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -55,7 +63,7 @@ window.CHAT_WIDGET_CONFIG = {
     showSevenTVEmotes: true,
     emoteSizePx: 34,
     showCheers: true,
-    showTwitchGifs: true,
+    showTwitchGifs: false,
     gifMaxHeightPx: 150,
 
     // Badges, icons and paints

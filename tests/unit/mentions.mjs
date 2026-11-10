@@ -167,6 +167,41 @@ test('Existing mentions update when their user speaks or changes color', () => {
     r.rememberColor('alice', 'Alice', '#ff0000');
     assert.equal(r.root.querySelectorAll('.mention')[0].style.color, '#ff0000');
 });
+
+test('Known names without @ use mention colors and preserve the original text', () => {
+    const node = new Node();
+    const text = 'Hola, (ALICE)! bob, desconocido y @desconocido.';
+    r.appendText(node, text);
+    assert.equal(node.textContent, text);
+    const mentions = node.querySelectorAll('.mention');
+    assert.deepEqual(
+        mentions.map((n) => n.textContent),
+        ['ALICE', 'bob', '@desconocido']
+    );
+    assert.equal(mentions[0].style.color, '#ff0000');
+    assert.equal(mentions[1].style.color, '#aabbcc');
+});
+
+test('Bare names match whole words and leave emails and URL paths untouched', () => {
+    const node = new Node();
+    const text =
+        'malice alice_extra aliceé éalice alice\u0301 alice@example.com correo@alice.com https://example.com/alice alice.com alice.';
+    r.appendMentions(node, text);
+    assert.equal(node.textContent, text);
+    assert.deepEqual(
+        node.querySelectorAll('.mention').map((n) => n.textContent),
+        ['alice']
+    );
+});
+
+test('Disabling mention colors also disables bare-name highlighting', () => {
+    const renderer = Object.create(r);
+    renderer.config = { ...config, colorMentions: false };
+    const node = new Node();
+    renderer.appendText(node, 'alice @alice');
+    assert.equal(node.textContent, 'alice @alice');
+    assert.equal(node.querySelectorAll('.mention').length, 0);
+});
 test('Mentions do not match email addresses, overlong logins or HTML', () => {
     const text = 'correo@alice.com @abcdefghijklmnopqrstuvwxyz <script>alert(1)</script> @alice';
     const node = new Node();
@@ -186,13 +221,16 @@ test('Native and 7TV emotes resolve before mention coloring', () => {
     assert.equal(node.querySelectorAll('.emote-stack').length, 1);
     assert.equal(node.querySelectorAll('.mention').length, 1);
     r.assets.emote = (token) =>
-        token === '@alice'
+        token === '@alice' || token === 'alice'
             ? {
                   src: 'https://cdn.7tv.app/example',
                   ratio: 1
               }
             : null;
     r.body(node, '@alice', '');
+    assert.equal(node.querySelectorAll('.emote-stack').length, 1);
+    assert.equal(node.querySelectorAll('.mention').length, 0);
+    r.body(node, 'alice', '');
     assert.equal(node.querySelectorAll('.emote-stack').length, 1);
     assert.equal(node.querySelectorAll('.mention').length, 0);
 });
@@ -311,6 +349,24 @@ test('Late 7TV paints update existing and new mentions', () => {
     r.appendText(later, '@PIXELOT');
     assert.equal(later.querySelectorAll('.painted').length, 1);
     assert.equal(later.textContent, '@PIXELOT');
+});
+
+test('Bare-name mentions receive late paints, color changes and paint removal', () => {
+    const node = new Node();
+    r.rememberColor('bare_user', 'Bare_User', '#123456');
+    r.appendText(node, 'Bare_User');
+    r.root.append(node);
+    const mention = node.querySelectorAll('.mention')[0];
+    assert.equal(mention.style.color, '#123456');
+    r.rememberPaint('bare_user', 'Bare_User', gradient);
+    assert.equal(mention.style.backgroundImage, gradient.backgroundImage);
+    const later = new Node();
+    r.appendText(later, 'BARE_USER');
+    assert.equal(later.querySelectorAll('.painted').length, 1);
+    r.rememberColor('bare_user', 'Bare_User', '#654321');
+    r.rememberPaint('bare_user', 'Bare_User', null);
+    assert.equal(mention.classList.contains('painted'), false);
+    assert.equal(mention.style.color, '#654321');
 });
 test('Users keep separate mention paints and removing a paint restores color', () => {
     const other = {

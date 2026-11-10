@@ -263,9 +263,20 @@
                 return;
             }
             let cursor = 0;
-            // The leading boundary avoids matching email addresses.
-            const pattern = /(^|[^\p{L}\p{N}_@])(@[a-zA-Z0-9_]{1,25})(?![a-zA-Z0-9_])/gu;
+            // Match whole names; keep email addresses, domains and URL paths as text.
+            const pattern =
+                /(^|[^\p{L}\p{N}\p{M}_@./])(@?[a-zA-Z0-9_]{1,25})(?![\p{L}\p{N}\p{M}_@]|[./][\p{L}\p{N}_])/gu;
             for (const match of text.matchAll(pattern)) {
+                const login = match[2].replace(/^@/, '').toLowerCase();
+                const key = ChatWidget.providerKey(provider, login);
+                // Without @, only names already known to the widget are mentions.
+                if (
+                    !match[2].startsWith('@') &&
+                    !this.userColors?.has(key) &&
+                    !this.userPaints?.has(key)
+                ) {
+                    continue;
+                }
                 const start = match.index + match[1].length;
                 if (start > cursor) {
                     node.append(document.createTextNode(text.slice(cursor, start)));
@@ -273,10 +284,9 @@
                 const span = document.createElement('span');
                 span.className = 'mention';
                 span.textContent = match[2];
-                span.dataset.login = match[2].slice(1).toLowerCase();
+                span.dataset.login = login;
                 span.dataset.provider = provider;
                 if (preview) span.dataset.preview = 'true';
-                const key = ChatWidget.providerKey(provider, span.dataset.login);
                 const color = this.userColors.get(key);
                 if (color && !preview) {
                     this.colorMention(span, color);

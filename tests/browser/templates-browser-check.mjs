@@ -41,7 +41,7 @@ try {
         document.head.innerHTML = '<style id="styles"></style>';
         document.getElementById('styles').textContent = ${JSON.stringify(classicCSS)};
         document.body.innerHTML = '<main id="chat"></main><pre id="diagnostics" hidden></pre>';
-        window.testConfig = ${JSON.stringify({ ...defaults, sources: [], enableAnimations: false })};
+        window.testConfig = ${JSON.stringify({ ...defaults, sources: [], enableAnimations: false, usernameGradient: false })};
     })()`);
     await browser.evaluate(readWidgetScripts(['providers', 'renderer', 'main']));
     await browser.evaluate(`(() => {
@@ -462,6 +462,50 @@ try {
     }
     assert.ok(media.long.height > 352.5);
     assert.ok(Math.abs(media.long.client - media.long.scroll) <= 1, JSON.stringify(media.long));
+    const wideEmotes = await browser.evaluate(`(async () => {
+        await renderTemplate('bubble-chat');
+        const renderer = CHAT_WIDGET_RUNTIME.renderer;
+        renderer.root.style.height = '6000px';
+        const originalWidth = renderer.root.style.width;
+        const image = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="100"><rect width="1200" height="100" fill="gold"/></svg>');
+        CHAT_WIDGET_RUNTIME.assets.emote = token => token === 'Wide' ? {src:image,ratio:12} : null;
+        const samples = [];
+        for (const text of ['Wide', 'Wide Wide', 'Texto Wide']) {
+            renderer.add({prefix:'alice!test',tags:{id:'wide-'+samples.length},params:['#test',text]});
+            samples.push(renderer.rows.at(-1));
+        }
+        // Twitch dimensions arrive after loading rather than in the catalog.
+        renderer.add({prefix:'alice!test',tags:{id:'wide-native',emotes:'25:0-4'},params:['#test','Kappa']});
+        const native = renderer.rows.at(-1);
+        native.body.querySelector('img').src = image;
+        samples.push(native);
+        await Promise.all(samples.flatMap(row => [...row.body.querySelectorAll('img')].map(img => img.decode())));
+        const results = [];
+        for (const width of [180, 400]) {
+            renderer.root.style.width = width + 'px';
+            renderer.fit();
+            for (const sample of samples) {
+                const body = sample.body.getBoundingClientRect();
+                const style = getComputedStyle(sample.body);
+                for (const img of sample.body.querySelectorAll('img')) {
+                    const rect = img.getBoundingClientRect();
+                    results.push({width, left:rect.left, right:rect.right,
+                        availableLeft:body.left+parseFloat(style.paddingLeft),
+                        availableRight:body.right-parseFloat(style.paddingRight),
+                        imageWidth:rect.width,imageHeight:rect.height});
+                }
+            }
+        }
+        renderer.root.style.width = originalWidth;
+        renderer.root.style.height = '';
+        return results;
+    })()`);
+    for (const item of wideEmotes) {
+        assert.ok(item.imageWidth > 0 && item.imageHeight > 0, JSON.stringify(item));
+        assert.ok(item.left >= item.availableLeft - 1, JSON.stringify(item));
+        assert.ok(item.right <= item.availableRight + 1, JSON.stringify(item));
+        assert.ok(Math.abs(item.imageWidth / item.imageHeight - 12) < 0.1, JSON.stringify(item));
+    }
     const variedGaps = await browser.evaluate(`(async () => {
         ChatWidget.start({...testConfig,template:'bubble-chat',showTwitchGifs:false,showLinkFavicons:false});
         document.getElementById('diagnostics').hidden = true;

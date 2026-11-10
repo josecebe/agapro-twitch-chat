@@ -137,6 +137,23 @@
         &.bubble-single-emote {
             text-align: center;
         }
+
+        .emote-stack {
+            // Container units also constrain intrinsic grid sizing before the
+            // fit-content bubble has a final width.
+            --bubble-emote-max-width: max(
+                1px,
+                calc(100cqw - 2 * var(--bubble-body-margin) - 2 * var(--bubble-padding))
+            );
+            max-width: var(--bubble-emote-max-width);
+            height: auto;
+
+            > .emote {
+                max-width: var(--bubble-emote-max-width);
+                height: auto;
+                max-height: var(--emote-size);
+            }
+        }
     }
 
     .reply-context {
