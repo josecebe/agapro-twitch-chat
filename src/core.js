@@ -2,40 +2,48 @@
     'use strict';
 
     const ChatWidget = (globalObject.ChatWidget = {});
-    ChatWidget.resolveColor = function (value, fallback = '#000000', opacity = 1) {
-        const parse = (input) => {
-            const text = String(input || '').trim();
-            if (text.toLowerCase() === 'transparent') return [0, 0, 0, 0];
-            const hex = text.match(/^#([a-f\d]{3,4}|[a-f\d]{6}|[a-f\d]{8})$/i)?.[1];
-            if (hex) {
-                const expanded =
-                    hex.length <= 4 ? [...hex].map((char) => char + char).join('') : hex;
-                return [0, 2, 4]
-                    .map((offset) => parseInt(expanded.slice(offset, offset + 2), 16))
-                    .concat(expanded.length === 8 ? parseInt(expanded.slice(6), 16) / 255 : 1);
-            }
-            const rgb = text.match(/^rgba?\(([^)]+)\)$/i)?.[1];
-            if (!rgb) return null;
-            const parts = rgb.replace(/[,/]/g, ' ').trim().split(/\s+/);
-            if (
-                ![3, 4].includes(parts.length) ||
-                parts.some((part) => !/^[+-]?(?:\d+\.?\d*|\.\d+)%?$/.test(part))
-            )
-                return null;
-            const numbers = parts.map((part, index) => {
-                const maximum = index === 3 ? 1 : 255;
-                const number = part.endsWith('%')
-                    ? (parseFloat(part) / 100) * maximum
-                    : parseFloat(part);
-                return Math.max(0, Math.min(maximum, number));
-            });
-            return numbers.length === 3 ? [...numbers, 1] : numbers;
-        };
-        const [red, green, blue, alpha] = parse(value) || parse(fallback) || [0, 0, 0, 1];
+    function parseColor(input) {
+        const text = String(input || '').trim();
+        if (text.toLowerCase() === 'transparent') return [0, 0, 0, 0];
+        const hex = text.match(/^#([a-f\d]{3,4}|[a-f\d]{6}|[a-f\d]{8})$/i)?.[1];
+        if (hex) {
+            const expanded = hex.length <= 4 ? [...hex].map((char) => char + char).join('') : hex;
+            return [0, 2, 4]
+                .map((offset) => parseInt(expanded.slice(offset, offset + 2), 16))
+                .concat(expanded.length === 8 ? parseInt(expanded.slice(6), 16) / 255 : 1);
+        }
+        const rgb = text.match(/^rgba?\(([^)]+)\)$/i)?.[1];
+        if (!rgb) return null;
+        const parts = rgb.replace(/[,/]/g, ' ').trim().split(/\s+/);
+        if (
+            ![3, 4].includes(parts.length) ||
+            parts.some((part) => !/^[+-]?(?:\d+\.?\d*|\.\d+)%?$/.test(part))
+        )
+            return null;
+        const numbers = parts.map((part, index) => {
+            const maximum = index === 3 ? 1 : 255;
+            const number = part.endsWith('%')
+                ? (parseFloat(part) / 100) * maximum
+                : parseFloat(part);
+            return Math.max(0, Math.min(maximum, number));
+        });
+        return numbers.length === 3 ? [...numbers, 1] : numbers;
+    }
+    function colorResult([red, green, blue, alpha], opacity = 1) {
         const effectiveAlpha =
             alpha *
             Math.max(0, Math.min(1, Number.isFinite(Number(opacity)) ? Number(opacity) : 1));
         return { css: `rgba(${red},${green},${blue},${effectiveAlpha})`, alpha: effectiveAlpha };
+    }
+    ChatWidget.resolveColor = function (value, fallback = '#000000', opacity = 1) {
+        return colorResult(parseColor(value) || parseColor(fallback) || [0, 0, 0, 1], opacity);
+    };
+    ChatWidget.resolveBackground = function (value, opacity) {
+        const explicitOpacity = opacity !== undefined;
+        const color =
+            parseColor(value) || parseColor(explicitOpacity ? '#000000' : 'rgba(0,0,0,0.3)');
+        if (explicitOpacity) color[3] = ChatWidget.clamp(opacity, 0, 1, 0.3);
+        return colorResult(color);
     };
     ChatWidget.messageProviders = {
         twitch: {

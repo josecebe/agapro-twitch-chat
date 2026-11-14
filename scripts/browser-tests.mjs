@@ -8,12 +8,19 @@ for (const suite of [
     'spacing-browser-check',
     'emote-stack-browser-check',
     'templates-browser-check',
+    'berserk-browser-check',
+    'firefox-berserk-browser-check',
+    'chat-width-browser-check',
+    'alignment-browser-check',
+    'badge-spacing-browser-check',
+    'blood-browser-check',
     'bubble-spacing-browser-check',
     'visible-spacing-browser-check',
     'paint-browser-check',
     'links-browser-check',
     'demo-browser-check',
-    'build-browser-check'
+    'build-browser-check',
+    'hosted-browser-check'
 ]) {
     const result = spawnSync(process.execPath, [`tests/browser/${suite}.mjs`], {
         windowsHide: true,

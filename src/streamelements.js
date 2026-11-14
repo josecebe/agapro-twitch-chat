@@ -44,6 +44,16 @@
     ChatWidget.streamElementsConfig = function (defaults, detail = {}) {
         const fields = detail.fieldData || {};
         const config = readFields(defaults, fields);
+        // Preserve saved widget colors that predate the separate opacity control.
+        if (
+            fields.messageBackgroundOpacity === undefined &&
+            fields.messageBackgroundColor !== undefined
+        ) {
+            config.messageBackgroundOpacity = ChatWidget.resolveColor(
+                config.messageBackgroundColor,
+                'rgba(0,0,0,0.6)'
+            ).alpha;
+        }
         if (fields.channelMode === 'custom') {
             const channels = String(fields.customChannels || '').split(/[,;\s]+/);
             config.sources = channels

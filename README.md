@@ -45,6 +45,38 @@ To show multiple channels, add another entry to `sources`. Set `enabled: false` 
 
 ## 3. Install in StreamElements
 
+### Hosted version (recommended for Berserk)
+
+This version keeps the editor tabs small and downloads the code, styles and images
+from this repository's GitHub Pages site. After the initial setup, pushing to
+`master` builds and publishes updates automatically. Reload the overlay after the
+**Publish StreamElements resources** workflow finishes to use the new version.
+
+1. In the repository, open **Settings / Pages** and set **Build and deployment /
+   Source** to **GitHub Actions**. Enable Actions if the repository has them disabled.
+2. Commit and push the changes, including `.github/workflows/pages.yml`, to `master`.
+3. Wait for **Actions / Publish StreamElements resources** to finish successfully.
+   Check that `https://josecebe.github.io/agapro-twitch-chat/manifest.json` opens.
+4. Paste the five files from `dist/streamelements-hosted/` into the matching editor
+   tabs: `index.html` into HTML, `style.css` into CSS, `index.js` into JS,
+   `fields.json` into Fields, and `data.json` into Data. If the widget already has
+   customized Data, retain those values instead of replacing them with defaults.
+5. Select the channel and style in the widget settings, then save the widget and
+   overlay. The loader only needs to be pasted once. Updating available Fields is
+   still necessary when new configuration controls are added.
+
+`npm run build` creates the hosted tabs and `dist/web/`. Only `dist/web/` is published:
+local OBS settings are not uploaded. Assets, CSS and JS have content-based filenames;
+the loader fetches the current manifest on each reload to avoid stale versions.
+The loader buffers StreamElements settings until the external code and CSS are ready.
+Set `HOSTED_BASE_URL` when building for another HTTPS location. The workflow reads
+the Pages URL automatically. New generated web assets do not need to be committed.
+
+### Self-contained version
+
+The full inline version remains available below; its embedded artwork can exceed
+StreamElements' editor size limits. Use the hosted version if saving fails.
+
 1. Add a **Custom Widget** to your overlay and open its editor.
 2. Copy the contents of each file into the matching tab:
 
@@ -82,7 +114,7 @@ See the [Streamlabs Custom Widget guide](https://support.streamlabs.com/hc/en-us
 
 ## 5. Use and customize
 
-For the local version, edit `dist/local/config.js`, save it, and use **Refresh cache of current page** in the OBS source properties.
+For the local version, edit `dist/local/config.js`, save it, and use **Refresh cache of current page** in the OBS source properties. `npm run build` preserves this file when it already exists.
 
 For StreamElements, change the widget settings and save the overlay.
 
@@ -90,21 +122,30 @@ For Streamlabs, edit the readable `config` object at the top of the JS tab and s
 
 You can adjust fonts, text/emote/badge sizes, colors, backgrounds, shadows, message limits, spacing, replies, GIFs, and 7TV effects. In local configuration, use `true` and `false` without quotes.
 
-- **Style template:** `template: 'classic'` (the default) preserves the existing appearance and all your appearance settings. Select **Appearance → Style template → Bubble Chat** in StreamElements, or set `template: 'bubble-chat'` in local/Streamlabs configuration, for the built-in Animal Crossing bubble style: colored name pills, rounded translucent black message backgrounds, Aclonica usernames and Arial Black messages. **Text size** (`fontSizePx`) controls the username and message size in both templates; reply text scales proportionally. In Bubble Chat, **Background color and opacity** controls the text bubble background, including full transparency, without changing the name pill. Ordinary text bubbles fit their content and can grow to the full available width for long messages. First messages and Channel Points messages always fill the available width; name pills keep their natural width. **First-message color and opacity** sets the first-message bubble background when **First-message background** is enabled. Message spacing uses `messageGapPx` in both templates. Local and Google Font controls for the general font, usernames, and message text work in both templates, including inheritance from the general font when a role is empty. Interline spacing, reply spacing, badge size and emote size also use the shared settings. Emote-only bubbles enlarge emotes relative to the configured emote size, and long messages have no theme-specific height limit. All **Typography** controls are shared: size, fonts, bold usernames/mentions, localized logins, message color/opacity and text shadow; switching back to Classic restores those controls' values. Channels, filters, replies, moderation and other chat behavior remain shared. Both templates use the same HTML and chat engine.
+- **Style template:** `template: 'classic'` (the default) preserves the existing appearance and all your appearance settings. Select **Appearance → Style template → Bubble Chat** in StreamElements, or set `template: 'bubble-chat'` in local/Streamlabs configuration, for the built-in Animal Crossing bubble style: colored name pills, rounded translucent black message backgrounds, Aclonica usernames and Arial Black messages. **Text size** (`fontSizePx`) controls the username and message size in both templates; reply text scales proportionally. In Bubble Chat, **Background color** and **Background opacity** control the text bubble background, including full transparency, without changing the name pill. Ordinary text bubbles fit their content and can grow to the full available width for long messages. First messages and Channel Points messages always fill the available width; name pills keep their natural width. **First-message color and opacity** sets the first-message bubble background when **First-message background** is enabled. Message spacing uses `messageGapPx` in both templates. Local and Google Font controls for the general font, usernames, and message text work in both templates, including inheritance from the general font when a role is empty. Interline spacing, reply spacing, badge size and emote size also use the shared settings. Emote-only bubbles enlarge emotes relative to the configured emote size, and long messages have no theme-specific height limit. All **Typography** controls are shared: size, fonts, bold usernames/mentions, localized logins, message color/opacity and text shadow; switching back to Classic restores those controls' values. Channels, filters, replies, moderation and other chat behavior remain shared. Both templates use the same HTML and chat engine.
+
+- **Blood burst:** choose **Appearance / Message removal effect / Blood burst**, or set `moderationAnimation: 'blood'`, for a brief red droplet explosion when a message is moderated or reaches its lifetime. Drops fall with gravity and fade; deleted text is removed immediately. It uses one shared canvas with at most 512 particles and respects disabled animations and reduced motion. The existing Dust option keeps its original moderation-only behaviour.
+- **Berserk sword entrance:** `berserkSwordAnimation: true` enables a short slide and fade for the sword, badges and nickname together. Set it to `false` to disable it, or use **Appearance / Berserk: animate sword entrance** in StreamElements. The global animation switch and reduced-motion preference also disable this entrance.
+
+- **Background controls:** `messageBackgroundColor` sets the color and `messageBackgroundOpacity` sets opacity independently (0 to 1). When the separate opacity is present, it overrides any alpha in the color picker. Older local configs without it still use their color alpha.
 
 - **Language:** English is the default. Use `language: 'es'` for Spanish, or select **Language → Chat language** in StreamElements.
 - **Message spacing:** `messageGapPx` sets the space between messages; `replyGapPx` sets the space below reply headers. Use `0` for no additional gap.
+- **Chat alignment:** `chatAlignment: 'left'` (default) or `'right'` anchors the chat container to that side of the browser source. In StreamElements use **Messages / Chat alignment**. Bubble Chat and Berserk align headers, panels and message text to the chosen side; oversized names can extend beyond the chat width toward the opposite side. Berserk mirrors only the sword artwork on the right, keeping names and badges readable. Single-emote bubbles keep their centered emote.
+- **7TV emote resolution:** `sevenTVEmoteScale: 1` selects the download resolution, from 1x through 4x. In StreamElements, use **Emotes and GIFs / 7TV emote resolution (1x–4x)**. This applies to global, channel and Shared Chat emotes; `emoteSizePx` still controls their displayed size. The smallest WebP/AVIF at the selected resolution is preferred, with available variants as a fallback.
+- **Maximum chat width:** `chatMaxWidthPx: 525` caps the whole chat container in pixels, including its padding. In StreamElements, use **Messages / Maximum chat width (px)**. Messages wrap within this width, or the viewport width if smaller. Berserk swords and Bubble Chat name pills keep their natural width and may extend beyond the container; leave enough width in the OBS browser source to show them.
 - **Message lifetime:** `messageLifetimeSeconds: 0` keeps messages until they leave the display or are removed. Set a positive value to expire them after that many seconds.
 - **Line height:** `messageLineHeight` is a multiplier of the visible letter height of the message font (tallest ascender to lowest descender): `1` makes consecutive lines practically touch, `2` doubles that spacing, and so on up to `3`. Emotes and emoji taller than the text can overlap slightly at `1`.
 - **Shared Chat channel icon:** while a Twitch Shared Chat session is active, every message shows its origin channel's avatar as the first badge, so you can tell which streamer's chat it came from. It appears even when badges are hidden. Turn it off with **Badges, icons and paints → Shared Chat: show origin channel icon first** or `showSharedChatIcon: false`.
+- **Berserk:** select **Appearance / Style template / Berserk**, or set `template: 'berserk'`. The nickname sits inside a sword and the message uses a textured blood mask. Bubbles choose different consecutive styles and four mirror orientations; their width follows the message independently of the sword. Background opacity affects only the texture and its shadow. Add bubble SVGs or replace the sword/texture PNGs, then rebuild: all assets prepare automatically. See [Berserk assets and appearance](src/templates/berserk/README.md).
+
 - **Nick gradients:** enable **Typography → Gradient for normal Twitch nick colors**, or set `usernameGradient: true`, to shade the normal nick color from a slightly lighter top through its original color in the middle to a darker bottom. Bubble Chat applies it to the name pill and keeps the letters white; Classic applies it to the nickname text. Mentions and the "reply to" user use the same gradient as plain text. Equipped 7TV paints take priority. Disabled by default.
 - **Mentions:** `colorMentions` applies nick colors and enabled 7TV paints to `@username` and to whole usernames written without `@` when the widget already knows the user. Matching ignores case; unknown bare names stay as ordinary text. Emotes take priority over name highlighting.
-- **Highlighted messages:** Twitch highlighted messages use the same animated pastel background in both templates. Classic displays it in a box with the same border and corners as first messages. Reduced-motion settings keep the gradient static.
+- **Highlighted messages:** Twitch highlighted messages use the same animated pastel gradient in all three templates. Classic displays it in a box with the same border and corners as first messages; Berserk overlays it on its blood texture and mask. Reduced-motion settings keep the gradient static.
 - **GIFs:** `showTwitchGifs: true` displays images. With `false`, they appear as a `GIF` label.
-- **7TV emote files:** selects the smaller WebP 1x or AVIF 1x file. If neither is available, selects the smallest WebP, AVIF or GIF variant from 1x to 4x. Missing sizes sort last within each group; ties prefer WebP, then AVIF, then GIF. Selection uses catalog metadata, without retries after image loading failures.
 - **Fonts:** local font families must be installed on the OBS computer. Use the Google Font settings to load an online font instead.
 
-To keep local configuration changes across builds, also update the root `config.js`: rebuilding replaces `dist/local/config.js` with that file.
+`npm run build` preserves an existing `dist/local/config.js`. Root `config.js` supplies defaults for new local installations and the hosted exports.
 
 ### Preview and connection status
 

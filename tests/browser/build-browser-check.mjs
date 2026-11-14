@@ -286,7 +286,7 @@ try {
     const childLiteral = JSON.stringify(childDocument).replaceAll('<', '\\u003c');
     await writeFile(
         preview,
-        '<!doctype html><iframe sandbox="allow-scripts" width="450" height="800"></iframe><script>' +
+        '<!doctype html><meta charset="utf-8"><iframe sandbox="allow-scripts" width="450" height="800"></iframe><script>' +
             'document.querySelector("iframe").src=URL.createObjectURL(new Blob([' +
             childLiteral +
             '],{type:"text/html"}));</script>'
@@ -346,7 +346,7 @@ try {
     await checkGifs(80);
     await browser.evaluate(`(() => {
         window.__oldRuntime = CHAT_WIDGET_RUNTIME;
-        window.dispatchEvent(new CustomEvent('onWidgetLoad', {detail:{channel:{username:'ignored'},fieldData:{...${JSON.stringify(data)},language:'en',googleFont:'',usernameGoogleFont:'',textGoogleFont:'',messageBackground:'true',messageBackgroundColor:'rgba(12,34,56,0.35)',firstMessageBackgroundColor:'rgba(151,71,255,0.75)',textColor:'rgba(255,255,255,0.8)',channelMode:'custom',customChannels:'alpha, beta, alpha'}}}));
+        window.dispatchEvent(new CustomEvent('onWidgetLoad', {detail:{channel:{username:'ignored'},fieldData:{...${JSON.stringify(data)},language:'en',googleFont:'',usernameGoogleFont:'',textGoogleFont:'',messageBackground:'true',messageBackgroundColor:'#0c2238',messageBackgroundOpacity:'0.35',firstMessageBackgroundColor:'rgba(151,71,255,0.75)',textColor:'rgba(255,255,255,0.8)',channelMode:'custom',customChannels:'alpha, beta, alpha'}}}));
     })()`);
     await waitFor(
         '__chatSockets.filter(socket => socket.readyState === 1 && socket.channel).length === 2'

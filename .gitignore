@@ -1,8 +1,12 @@
 node_modules/
 /styles.css
 /templates.js
+/src/templates/berserk/_bubble.scss
+/src/templates/berserk/_sword.scss
+/src/templates/berserk/_texture.scss
 /_*/
 /tests/artifacts/
+/dist/web/
 /.agents/
 /.codex/
 /.aws/

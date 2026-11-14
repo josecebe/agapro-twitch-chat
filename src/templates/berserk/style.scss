@@ -1,0 +1,372 @@
+@use './sword';
+@use './bubble';
+@use './texture';
+@use '../../styles/highlight';
+
+#chat[data-template='berserk'] {
+    container-type: inline-size;
+    align-items: flex-start;
+    padding: var(--berserk-frame-padding);
+    overflow: visible;
+    --berserk-texture-image: #{texture.$image};
+    // Size sword caps from the actual PNGs; the blade fills the nickname width.
+    --berserk-tip-width: calc(
+        var(--berserk-sword-height) * #{sword.$tip-width} / #{sword.$tip-height}
+    );
+    --berserk-hilt-width: calc(
+        var(--berserk-sword-height) * #{sword.$hilt-width} / #{sword.$hilt-height}
+    );
+    @include bubble.variants;
+
+    &[data-alignment='right'] {
+        align-items: flex-end;
+        --berserk-sword-enter-offset: -28px;
+        --berserk-name-padding: 8px calc(var(--berserk-tip-width) + 10px) 8px 3px;
+        --berserk-badges-padding: calc(var(--berserk-hilt-width) + 3px);
+
+        .message {
+            grid-template-columns:
+                [start] minmax(0, 1fr) [provider] max-content [badges] max-content
+                [username] max-content [end];
+            justify-content: end;
+
+            &::after {
+                grid-area: header / provider / notice / end;
+                // Only the sword artwork mirrors; lettering and badges stay upright.
+                // Translate runs before this mirror, so both artwork and text
+                // enter from the same screen direction.
+                scale: -1 1;
+            }
+        }
+
+        .message-content > .provider-icon {
+            margin-left: var(--berserk-hilt-width);
+        }
+
+        .body {
+            grid-area: body / start / end / end;
+            justify-self: end;
+            text-align: right;
+
+            &.berserk-single-emote {
+                text-align: center;
+            }
+        }
+
+        .reply-context {
+            grid-area: reply / start / header / end;
+            justify-self: end;
+            text-align: left;
+            margin-inline-start: -100cqw;
+            margin-inline-end: 0;
+        }
+    }
+
+    .message {
+        position: relative;
+        isolation: isolate;
+        display: grid;
+        grid-template-columns:
+            [provider] max-content [badges] max-content
+            [username] max-content [space] minmax(0, 1fr) [end];
+        grid-template-rows:
+            [reply] var(--berserk-reply-track, 0px)
+            [header] minmax(var(--berserk-sword-height), max-content)
+            [notice] auto [body] auto [end];
+        width: fit-content;
+        max-width: 100%;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+        margin: 0;
+        gap: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        line-height: 1.2;
+
+        &.has-reply {
+            --berserk-reply-track: auto;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .animated &.berserk-sword-animated {
+                // Animate the complete header in sync; the message panel stays independent.
+                &::after,
+                .name,
+                .badges,
+                .provider-icon {
+                    animation: berserk-sword-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+                }
+            }
+        }
+
+        &.first-message,
+        &.channel-points-redemption,
+        &.highlighted-message {
+            width: 100%;
+        }
+
+        &.first-message-background .berserk-bubble-background::before {
+            // Keep the texture under the configured first-message color and
+            // composite both through the same blood mask and shadow.
+            background-image:
+                linear-gradient(var(--first-message-background), var(--first-message-background)),
+                var(--berserk-texture-image);
+        }
+
+        &.highlighted-message:not(.first-message-background) .berserk-bubble-background::before {
+            background-image: highlight.$gradient, var(--berserk-texture-image);
+            background-size:
+                900% 900%,
+                max(#{texture.$width}, 100%) max(#{texture.$height}, 100%);
+            background-position:
+                100% 100%,
+                var(--berserk-texture-x, 0%) var(--berserk-texture-y, 0%);
+            animation: berserk-highlight-gradient 5s linear infinite;
+
+            @media (prefers-reduced-motion: reduce) {
+                animation: none;
+            }
+        }
+
+        // Only mirror the background layer: text, emotes and sword stay upright.
+        &[data-berserk-bubble-orientation='horizontal'] .berserk-bubble-background::before {
+            transform: scaleX(-1);
+        }
+
+        &[data-berserk-bubble-orientation='vertical'] .berserk-bubble-background::before {
+            transform: scaleY(-1);
+        }
+
+        &[data-berserk-bubble-orientation='both'] .berserk-bubble-background::before {
+            transform: scale(-1, -1);
+        }
+
+        &::after {
+            content: '';
+            grid-area: header / provider / notice / space;
+            // Absolute grid placement keeps decoration out of track sizing.
+            position: absolute;
+            inset: 0;
+            min-width: 0;
+            padding-inline: var(--berserk-tip-width) var(--berserk-hilt-width);
+            border-radius: 0;
+            background-color: transparent;
+            background-image: sword.$tip, sword.$hilt, sword.$blade;
+            background-position:
+                left center,
+                right center,
+                center;
+            background-size:
+                var(--berserk-tip-width) 100%,
+                var(--berserk-hilt-width) 100%,
+                calc(100% + 2px) 100%;
+            background-repeat: no-repeat, no-repeat, no-repeat;
+            background-origin: border-box, border-box, content-box;
+            // Slight overlap prevents hairline seams at fractional pixel sizes.
+            background-clip: border-box;
+            box-shadow: none;
+            filter: var(--berserk-shape-shadow);
+            z-index: 0;
+            pointer-events: none;
+        }
+    }
+
+    .message-content {
+        display: contents;
+        margin: 0;
+        font-size: 0;
+        line-height: 0;
+
+        &:has(> .provider-icon) {
+            --berserk-badges-padding: 3px;
+        }
+
+        > .provider-icon {
+            grid-area: header / provider;
+            align-self: center;
+            margin-left: var(--berserk-tip-width);
+            z-index: 1;
+        }
+
+        > .badges {
+            grid-area: header / badges;
+            align-self: center;
+            padding-left: var(--berserk-badges-padding);
+            z-index: 1;
+        }
+    }
+
+    .name {
+        grid-area: header / username;
+        align-self: center;
+        min-width: 0;
+        padding: var(--berserk-name-padding);
+        font-weight: var(--username-weight, 400);
+        line-height: 1.2;
+        z-index: 1;
+        white-space: nowrap;
+        overflow: visible;
+        color: #fff;
+        text-shadow:
+            0 1px 2px #000,
+            0 0 4px #000;
+    }
+
+    .body {
+        position: relative;
+        width: fit-content;
+        // The sword may overflow its grid; message text still wraps to the chat.
+        max-width: min(100%, 100cqw);
+        justify-self: start;
+        --emote-size: calc(var(--berserk-emote-base) * var(--berserk-emote-scale, 1));
+        grid-area: body / provider / end / end;
+        display: block;
+        min-width: 0;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+        margin-top: calc(-1 * var(--berserk-overlap));
+        padding: var(--berserk-message-padding-top) var(--berserk-message-padding-inline)
+            var(--berserk-message-padding-bottom);
+        color: inherit;
+        font-weight: 400;
+        line-height: var(--message-line-height, 1.2);
+
+        .berserk-bubble-background {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            opacity: var(--message-background-opacity, 1);
+            filter: var(--berserk-shape-shadow);
+
+            &::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                border-radius: 0;
+                background-image: var(--berserk-texture-image);
+                // Percentages map to a crop inside the native image and remain valid
+                // automatically when fonts, emotes or the overlay change size.
+                background-position: var(--berserk-texture-x, 0%) var(--berserk-texture-y, 0%);
+                // Native pixels normally; stretch only when a bubble exceeds the
+                // source dimensions, as a fallback for exceptionally large messages.
+                background-size: max(#{texture.$width}, 100%) max(#{texture.$height}, 100%);
+                background-repeat: no-repeat;
+                // Compose one mask from eight vector edges and an opaque centre.
+                // Corners stay fixed; sides stretch on one axis. A 1px overlap
+                // prevents seams, without duplicating the texture or its shadow.
+                --mask-left: var(--berserk-bubble-left-width);
+                --mask-right: var(--berserk-bubble-right-width);
+                --mask-top: var(--berserk-bubble-top-height);
+                --mask-bottom: var(--berserk-bubble-bottom-height);
+                --mask-centre-width: calc(100% - var(--mask-left) - var(--mask-right) + 2px);
+                --mask-centre-height: calc(100% - var(--mask-top) - var(--mask-bottom) + 2px);
+                mask-image: var(--berserk-bubble-masks), linear-gradient(#000, #000);
+                mask-size:
+                    var(--mask-left) var(--mask-top),
+                    var(--mask-right) var(--mask-top),
+                    var(--mask-left) var(--mask-bottom),
+                    var(--mask-right) var(--mask-bottom),
+                    var(--mask-centre-width) var(--mask-top),
+                    var(--mask-centre-width) var(--mask-bottom),
+                    var(--mask-left) var(--mask-centre-height),
+                    var(--mask-right) var(--mask-centre-height),
+                    var(--mask-centre-width) var(--mask-centre-height);
+                mask-position:
+                    0 0,
+                    100% 0,
+                    0 100%,
+                    100% 100%,
+                    calc(var(--mask-left) - 1px) 0,
+                    calc(var(--mask-left) - 1px) 100%,
+                    0 calc(var(--mask-top) - 1px),
+                    100% calc(var(--mask-top) - 1px),
+                    calc(var(--mask-left) - 1px) calc(var(--mask-top) - 1px);
+                mask-repeat: no-repeat;
+                mask-mode: alpha;
+                mask-composite: add;
+                animation: none;
+                z-index: -1;
+                pointer-events: none;
+            }
+        }
+
+        &.berserk-single-emote {
+            text-align: center;
+        }
+
+        .emote-stack {
+            --berserk-emote-max-width: max(
+                1px,
+                calc(100cqw - 2 * var(--berserk-message-padding-inline))
+            );
+            max-width: var(--berserk-emote-max-width);
+            height: auto;
+
+            > .emote {
+                max-width: var(--berserk-emote-max-width);
+                height: auto;
+                max-height: var(--emote-size);
+            }
+        }
+    }
+
+    .reply-context {
+        grid-area: reply / provider / header / end;
+        width: 100cqw;
+        max-width: none;
+        margin: 0 0 var(--reply-gap, 8px);
+        margin-inline-end: -100cqw;
+        padding: 0;
+        background: none;
+        font-size: var(--berserk-reply-scale);
+        color: var(--berserk-reply-color);
+    }
+
+    .first-message-label {
+        margin: 0 0 var(--berserk-notice-gap);
+        padding: 0;
+        text-align: right;
+    }
+
+    .badge {
+        vertical-align: middle;
+    }
+
+    .action .body {
+        font-family: var(--text-font-family);
+        font-style: italic;
+    }
+
+    .action .emote {
+        transform: skew(-5deg);
+    }
+}
+
+@keyframes berserk-sword-enter {
+    from {
+        opacity: 0;
+        translate: var(--berserk-sword-enter-offset, 28px) 0;
+    }
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
+
+@keyframes berserk-highlight-gradient {
+    from {
+        background-position:
+            100% 100%,
+            var(--berserk-texture-x, 0%) var(--berserk-texture-y, 0%);
+    }
+    to {
+        background-position:
+            0 0,
+            var(--berserk-texture-x, 0%) var(--berserk-texture-y, 0%);
+    }
+}

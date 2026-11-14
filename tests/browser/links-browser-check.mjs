@@ -252,18 +252,14 @@ try {
         assert.ok(edge.leftBleed >= 5.5, JSON.stringify(edge));
         assert.ok(edge.padding >= 6, JSON.stringify(edge));
         assert.equal(edge.overflow, 'hidden');
-        assert.equal(edge.ellipsis, 'ellipsis');
+        assert.equal(edge.ellipsis, 'clip');
         assert.equal(edge.oneLine, true, JSON.stringify(edge));
-        if (edge.width >= 420) {
-            assert.ok(edge.rightBleed >= 5.5, JSON.stringify(edge));
-            assert.equal(edge.clipped, false, JSON.stringify(edge));
-            assert.equal(edge.separated, true, JSON.stringify(edge));
-        } else {
-            assert.equal(edge.clipped, true, JSON.stringify(edge));
-        }
+        assert.ok(edge.rightBleed >= 5.5, JSON.stringify(edge));
+        assert.equal(edge.clipped, false, JSON.stringify(edge));
+        assert.equal(edge.separated, true, JSON.stringify(edge));
     }
     console.log(
-        'PASS reply headings preserve shadow/glyph edges and still truncate in narrow layouts'
+        'PASS reply headings preserve complete recipient names and shadow/glyph edges in narrow layouts'
     );
     console.log(
         'PASS rounded domain labels, actual hostnames, favicon-only network requests, fallback and settings'

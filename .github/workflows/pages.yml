@@ -1,0 +1,50 @@
+name: Publish StreamElements resources
+
+on:
+    push:
+        branches: [master]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: github-pages
+    cancel-in-progress: false
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+              with:
+                  persist-credentials: false
+            - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+              with:
+                  node-version: 24
+                  cache: npm
+            - uses: actions/configure-pages@v5
+              id: pages
+            - run: npm ci --ignore-scripts
+            - run: npm test
+            - run: npm run build
+              env:
+                  HOSTED_BASE_URL: ${{ steps.pages.outputs.base_url }}/
+            - uses: actions/upload-pages-artifact@v4
+              with:
+                  path: dist/web
+
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            pages: write
+            id-token: write
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - uses: actions/deploy-pages@v4
+              id: deployment

@@ -8,7 +8,8 @@ const suites = [
     'shared-chat',
     'character-art',
     'expiry',
-    'dust'
+    'dust',
+    'blood'
 ];
 for (const suite of suites) {
     const result = spawnSync(process.execPath, [`tests/unit/${suite}.mjs`], { stdio: 'inherit' });
@@ -22,6 +23,7 @@ const result = spawnSync(
         '--test',
         'tests/unit/build.test.mjs',
         'tests/unit/templates.test.mjs',
+        'tests/unit/berserk.test.mjs',
         'tests/unit/browser-session.test.mjs',
         'tests/unit/i18n.test.mjs',
         'tests/unit/demo.test.mjs',

@@ -3,6 +3,9 @@ import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildSync } from 'esbuild';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 export const templateRoot = fileURLToPath(new URL('../src/templates/', import.meta.url));
 const registryFile = path.join(templateRoot, 'registry.mjs');
@@ -12,6 +15,10 @@ export function readTemplates(root = templateRoot) {
         .filter((entry) => entry.isDirectory() && !entry.name.startsWith('_'))
         .map((entry) => {
             const directory = path.join(root, entry.name);
+            const prepareFile = path.join(directory, 'prepare.cjs');
+            const assetSources = existsSync(prepareFile)
+                ? require(prepareFile)(directory)?.sources || []
+                : [];
             const configFile = path.join(directory, 'config.json');
             const config = JSON.parse(readFileSync(configFile, 'utf8'));
             const keys = new Set([
@@ -71,6 +78,7 @@ export function readTemplates(root = templateRoot) {
             return {
                 config,
                 configFile,
+                assetSources,
                 styleFile,
                 presentationFile: existsSync(presentationFile) ? presentationFile : null
             };
@@ -137,7 +145,11 @@ export function compileTemplates({
             ...Object.keys(result.metafile.inputs)
                 .filter((file) => file !== '<stdin>')
                 .map((file) => path.resolve(file)),
-            ...templates.flatMap((template) => [template.configFile, template.styleFile])
+            ...templates.flatMap((template) => [
+                template.configFile,
+                template.styleFile,
+                ...(template.assetSources || [])
+            ])
         ])
     ];
     return { code: result.outputFiles[0].text, sources };

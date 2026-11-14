@@ -233,8 +233,9 @@ try {
     })()`);
     for (const shadows of mediaShadows) {
         assert.notEqual(shadows.expected, 'none');
-        assert.deepEqual(shadows.enabled.slice(0, 2), ['none', 'none']);
-        assert.ok(shadows.enabled.slice(2).every((filter) => filter === shadows.expected));
+        // The text-shadow filter belongs to painted lettering. Media already
+        // carries its own artwork and stays unfiltered, including inside paints.
+        assert.ok(shadows.enabled.every((filter) => filter === 'none'));
         assert.ok(shadows.disabled.every((filter) => filter === 'none'));
         assert.deepEqual(shadows.overlayFilters, ['none', 'none']);
         assert.equal(shadows.nestedFilter, 'none');

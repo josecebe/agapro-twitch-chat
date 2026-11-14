@@ -8,62 +8,316 @@
         "src/diagnostics.js",
         "src/providers.js",
         "src/dust.js",
+        "src/blood.js",
         "src/renderer.js",
         "src/demo.js",
         "src/main.js",
         "src/templates/registry.mjs",
         "src/templates/bubble-chat/presentation.mjs",
+        "src/templates/berserk/presentation.mjs",
         "src/templates/classic/config.json",
         "src/templates/classic/style.scss",
         "src/templates/bubble-chat/config.json",
         "src/templates/bubble-chat/style.scss",
+        "src/templates/berserk/config.json",
+        "src/templates/berserk/style.scss",
+        "src/templates/berserk/prepare.cjs",
+        "src/templates/berserk/assets/bubbles/1/bubble.svg",
+        "src/templates/berserk/assets/bubbles/1/bubble-top.svg",
+        "src/templates/berserk/assets/bubbles/1/bubble-bottom.svg",
+        "src/templates/berserk/assets/bubbles/1/bubble-left.svg",
+        "src/templates/berserk/assets/bubbles/1/bubble-right.svg",
+        "src/templates/berserk/assets/bubbles/2/bubble.svg",
+        "src/templates/berserk/assets/bubbles/2/bubble-top.svg",
+        "src/templates/berserk/assets/bubbles/2/bubble-bottom.svg",
+        "src/templates/berserk/assets/bubbles/2/bubble-left.svg",
+        "src/templates/berserk/assets/bubbles/2/bubble-right.svg",
+        "src/templates/berserk/assets/bubbles/3/bubble.svg",
+        "src/templates/berserk/assets/bubbles/3/bubble-top.svg",
+        "src/templates/berserk/assets/bubbles/3/bubble-bottom.svg",
+        "src/templates/berserk/assets/bubbles/3/bubble-left.svg",
+        "src/templates/berserk/assets/bubbles/3/bubble-right.svg",
+        "src/templates/berserk/assets/bubbles/4/bubble.svg",
+        "src/templates/berserk/assets/bubbles/4/bubble-top.svg",
+        "src/templates/berserk/assets/bubbles/4/bubble-bottom.svg",
+        "src/templates/berserk/assets/bubbles/4/bubble-left.svg",
+        "src/templates/berserk/assets/bubbles/4/bubble-right.svg",
+        "src/templates/berserk/assets/bubbles/5/bubble.svg",
+        "src/templates/berserk/assets/bubbles/5/bubble-top.svg",
+        "src/templates/berserk/assets/bubbles/5/bubble-bottom.svg",
+        "src/templates/berserk/assets/bubbles/5/bubble-left.svg",
+        "src/templates/berserk/assets/bubbles/5/bubble-right.svg",
+        "src/templates/berserk/assets/tip.png",
+        "src/templates/berserk/assets/blade.png",
+        "src/templates/berserk/assets/hilt.png",
+        "src/templates/berserk/assets/texture.png",
         "src/streamelements.js",
+        "src/streamelements-loader.js",
         "src/streamlabs.js",
         "config.js",
         "index.html",
         "src/styles.scss",
-        "src/styles/_highlight.scss"
+        "src/styles/_highlight.scss",
+        "src/templates/berserk/_sword.scss",
+        "src/templates/berserk/_bubble.scss",
+        "src/templates/berserk/_texture.scss"
     ],
     "files": {
         "local/index.html": {
-            "bytes": 104311,
-            "sha256": "f93c1cbde9df21c1da23dac228133e1a9921f154d399cefa160642668239f2a9"
+            "bytes": 1327064,
+            "sha256": "4e93f231519a8a6b9f5b1603f68e13d33c0f58c6168a79907737910897503dea"
         },
         "local/config.js": {
-            "bytes": 3462,
-            "sha256": "03e506e4ea24dbcdaa8f0233dacb3701fd9022ee50be168625330d444002f105"
+            "bytes": 3683,
+            "sha256": "ca113db46295675982f9cb0959b861fddf612f08fdba4b85c0409690a32e91e0"
         },
         "streamelements/index.html": {
             "bytes": 116,
             "sha256": "f4ae79a809b6b7ee9dc297bae1dd1bd5f606f8732711c385f32e4bb7380e2714"
         },
         "streamelements/style.css": {
-            "bytes": 14207,
-            "sha256": "1f504d1c2a7ab31aa7057528dd26dc2a32952ece5e5aef218e8f051d4acfa204"
+            "bytes": 1233271,
+            "sha256": "3f2fc334f2cdf3c0a89a28d95c615133dc55d8884897b64f2a4c7c71e457fb3a"
         },
         "streamelements/index.js": {
-            "bytes": 93187,
-            "sha256": "6c1a6c3f6c1529a8143661e4a011b5e2862c70966ffa9f983f08b0eb75b4f78a"
+            "bytes": 97144,
+            "sha256": "c286ebd9cdcca36eca0df05e831733a43af2e69d1bb3dc81c62db8fa41ee9791"
         },
         "streamelements/fields.json": {
-            "bytes": 13482,
-            "sha256": "2bde3147555a5245983da0d4733ef7cc51abcb2ae9fe5ce42c6a43a04ce0830f"
+            "bytes": 14704,
+            "sha256": "0a37a753d8ba5f6ec7534da0534b193ab215e495c61d3d28e2cb383b6669a3ff"
         },
         "streamelements/data.json": {
-            "bytes": 1961,
-            "sha256": "73cf85edb0d7823950a10b6b7c77b0d2949617e9c2444ef1f61e616413c63029"
+            "bytes": 2108,
+            "sha256": "ed1afc35f2cf58df0811d3f7756d67cf99b6c277c54d71499006e9a1a0d096cf"
         },
         "streamlabs/index.html": {
             "bytes": 98,
             "sha256": "846c273e51b75b470a72dea59aae872319dac233c87edba031648648c35bf7a0"
         },
         "streamlabs/style.css": {
-            "bytes": 14207,
-            "sha256": "1f504d1c2a7ab31aa7057528dd26dc2a32952ece5e5aef218e8f051d4acfa204"
+            "bytes": 1233271,
+            "sha256": "3f2fc334f2cdf3c0a89a28d95c615133dc55d8884897b64f2a4c7c71e457fb3a"
         },
         "streamlabs/index.js": {
-            "bytes": 92728,
-            "sha256": "6cffd137fbec48977bfdfc7fcd2ff5fc16e366c12b67234faa70029a13b3e855"
+            "bytes": 96562,
+            "sha256": "c239da2a7eccc3877b00dc1d90ff361c6d07071f115b9eacc1ef23e39aa5b450"
+        },
+        "web/assets/320f74a2dc67f3a79db3.png": {
+            "bytes": 651511,
+            "sha256": "320f74a2dc67f3a79db376f4aaf5a2905946400925f771ba9a7fd4d293256733"
+        },
+        "web/assets/707eeec00a95ce97f5a0.svg": {
+            "bytes": 3457,
+            "sha256": "707eeec00a95ce97f5a03f92f6171884b24a051e5386c0027be4eb39a03b57cc"
+        },
+        "web/assets/777cb8b6a47189ffc690.svg": {
+            "bytes": 3460,
+            "sha256": "777cb8b6a47189ffc69021b5f936eaed28bb9207a41cb819c9bbaab08d86dcf0"
+        },
+        "web/assets/bb74c9f4d60f89f409a4.svg": {
+            "bytes": 3457,
+            "sha256": "bb74c9f4d60f89f409a4638f6025a0ef9b1398af46441009a06f1c4d346eb2ea"
+        },
+        "web/assets/74ea46633d8231d9f9a7.svg": {
+            "bytes": 3460,
+            "sha256": "74ea46633d8231d9f9a75c6537b60a234aed6ed79ea08ab2e904932897aab4cf"
+        },
+        "web/assets/f3c01e3c4e07b5a2b49f.svg": {
+            "bytes": 3461,
+            "sha256": "f3c01e3c4e07b5a2b49f34d52d82a81bb00ab0426a15fb947a44412b230df93d"
+        },
+        "web/assets/ad0f83955f8e4e501d48.svg": {
+            "bytes": 3461,
+            "sha256": "ad0f83955f8e4e501d487b41033b7bd18061f2683a495c6f84b72610601d91e0"
+        },
+        "web/assets/4c9faabf57bd368d2fcf.svg": {
+            "bytes": 3459,
+            "sha256": "4c9faabf57bd368d2fcf458552a737f6fbf7199c4c3612ed202fec46a07eefd6"
+        },
+        "web/assets/7888d18f938c50c3c5bf.svg": {
+            "bytes": 3462,
+            "sha256": "7888d18f938c50c3c5bff60dbfb2d5f5ae33d042565ab0dc5ec5982319678319"
+        },
+        "web/assets/237d9dc495cca89cfc70.svg": {
+            "bytes": 3408,
+            "sha256": "237d9dc495cca89cfc70fc34cfb8f7554fb012497c355efe341cdf11719c3004"
+        },
+        "web/assets/90c0e01344373c71149f.svg": {
+            "bytes": 3411,
+            "sha256": "90c0e01344373c71149f10b8f96659b2901d0e34fc1d39f69ba61020c3f7487b"
+        },
+        "web/assets/a9109467a709ac5764fc.svg": {
+            "bytes": 3408,
+            "sha256": "a9109467a709ac5764fc1daf3413e55b57bf5b99bab2b713256817fe14ff1bc1"
+        },
+        "web/assets/54eaed1f65cfe67d0f0e.svg": {
+            "bytes": 3411,
+            "sha256": "54eaed1f65cfe67d0f0e129a5bba2e5fc9d5b58c2270ebc61b6e3639cc1d76f1"
+        },
+        "web/assets/ca77b19d034a12d5055e.svg": {
+            "bytes": 3412,
+            "sha256": "ca77b19d034a12d5055e14f0ccfbf449ae3732e5b7b7357d305f636539c2c947"
+        },
+        "web/assets/773fe2edd1b4e4aca61f.svg": {
+            "bytes": 3412,
+            "sha256": "773fe2edd1b4e4aca61f95ff2116553cfd4c623fff933b2d7bfcff0ac9c6ec44"
+        },
+        "web/assets/91441287e70cadc30210.svg": {
+            "bytes": 3410,
+            "sha256": "91441287e70cadc30210a3af5558646f12624195a592922809d1d4f931ac6e22"
+        },
+        "web/assets/92e166f9aad14cd0d879.svg": {
+            "bytes": 3413,
+            "sha256": "92e166f9aad14cd0d8799a6617e44ad2abb88f89592bee449e5b18fc0fb181f1"
+        },
+        "web/assets/d0614dbf53e29dd43947.svg": {
+            "bytes": 3263,
+            "sha256": "d0614dbf53e29dd439477c6cf74bf02111dd441778ece0e1bed6c1501a81c177"
+        },
+        "web/assets/322fc87cd338219e8637.svg": {
+            "bytes": 3266,
+            "sha256": "322fc87cd338219e863730624738bc45599c50bb6eb04acbcb164d1f58907d3f"
+        },
+        "web/assets/146060801757483b6af9.svg": {
+            "bytes": 3263,
+            "sha256": "146060801757483b6af9949fe0858d9032c133427c09fc25a8fbf36815bcbd4c"
+        },
+        "web/assets/ecce975c8c59617b4eed.svg": {
+            "bytes": 3266,
+            "sha256": "ecce975c8c59617b4eed5ad602e90f50bda65eb8709db0c5bcd9d3a16fb8414a"
+        },
+        "web/assets/b987ed439311677f1858.svg": {
+            "bytes": 3267,
+            "sha256": "b987ed439311677f1858f33cdb1bdfa87400cd723a1953af5b27e5ed153b7ba1"
+        },
+        "web/assets/0df3faf8f150b9595634.svg": {
+            "bytes": 3267,
+            "sha256": "0df3faf8f150b959563438c8cb7f3a62bdc4b2decb7234f6a2579699e4d30fcf"
+        },
+        "web/assets/82cfbdd00944c0051298.svg": {
+            "bytes": 3265,
+            "sha256": "82cfbdd00944c0051298742c4228223ca4cfed3aa6caaf66780923569f01eb6a"
+        },
+        "web/assets/f85080d41ebaaf2f4cad.svg": {
+            "bytes": 3268,
+            "sha256": "f85080d41ebaaf2f4cad0502ffcd0ab42f468aa8eb1b7d3861e9dec4711a2ff1"
+        },
+        "web/assets/e54ddffefad26dbcf9d2.svg": {
+            "bytes": 2996,
+            "sha256": "e54ddffefad26dbcf9d2f57d14faf6661a0bee31210ab0f0ed67ca18c4fbf2c5"
+        },
+        "web/assets/d297a54ef4459b9412cd.svg": {
+            "bytes": 2999,
+            "sha256": "d297a54ef4459b9412cda302aa90fa7e2f4298d6cd543c5c81525a4df27aacf0"
+        },
+        "web/assets/a35fd927ed0586867ed2.svg": {
+            "bytes": 2996,
+            "sha256": "a35fd927ed0586867ed24c992b1f9e902b8ab3f49792ae9a796e7ab99161ef1a"
+        },
+        "web/assets/b0f5ec0e49013671e220.svg": {
+            "bytes": 2999,
+            "sha256": "b0f5ec0e49013671e2204378cb9efb5d89eb0189cb69fa78be7f7ed8d6d5e7c8"
+        },
+        "web/assets/5f04e507e8be4bb23680.svg": {
+            "bytes": 3000,
+            "sha256": "5f04e507e8be4bb23680dd6a0d8f3f0b66c6e73e35822936d2cc75cd78391dc3"
+        },
+        "web/assets/e9d8744265a202e33bb5.svg": {
+            "bytes": 3000,
+            "sha256": "e9d8744265a202e33bb5dd3f884d51292d18b35281415fa6a336c31a96ad3649"
+        },
+        "web/assets/4718236925358c398e4f.svg": {
+            "bytes": 2998,
+            "sha256": "4718236925358c398e4f8de811d7e7d16ec7476613c5fa57e3e092c956424047"
+        },
+        "web/assets/045255fe4b4f24d62076.svg": {
+            "bytes": 3001,
+            "sha256": "045255fe4b4f24d62076210fd3ea27fdc3ec4e273e90a55944a03684a485bff9"
+        },
+        "web/assets/838965b1c3a1ea34e3f3.svg": {
+            "bytes": 4003,
+            "sha256": "838965b1c3a1ea34e3f3310864d7385fcc2426377a332458a383fbaef84a0465"
+        },
+        "web/assets/c9b605a86da3ea24d024.svg": {
+            "bytes": 4006,
+            "sha256": "c9b605a86da3ea24d0243e8567d0e7ad127302b95a35fc7f2dd04c9843b2c674"
+        },
+        "web/assets/ddfbd958997f76eeea6c.svg": {
+            "bytes": 4003,
+            "sha256": "ddfbd958997f76eeea6c1e2b884d46197b3860cd3b744acd8fbd759a88ebae4d"
+        },
+        "web/assets/9948c985a6ab5d36b512.svg": {
+            "bytes": 4006,
+            "sha256": "9948c985a6ab5d36b51201bc1a0b2826b84a1a66a5e562779b47abc1b41c82e5"
+        },
+        "web/assets/a925117dbf4bdc70349e.svg": {
+            "bytes": 4007,
+            "sha256": "a925117dbf4bdc70349e947928308a7d7f34c8463958d53e7c2c0fab1d31e5df"
+        },
+        "web/assets/96b0e576bb6e60276800.svg": {
+            "bytes": 4007,
+            "sha256": "96b0e576bb6e6027680028363e6087fe78a3b7ec566ea263190890622fc19c5a"
+        },
+        "web/assets/d5e3af0c171f0cffce94.svg": {
+            "bytes": 4005,
+            "sha256": "d5e3af0c171f0cffce94e1e399b0bba83dd571ecbe55f1fff1558db4fab79b6f"
+        },
+        "web/assets/6728cf0a8da5335d411a.svg": {
+            "bytes": 4008,
+            "sha256": "6728cf0a8da5335d411a3918f30689c1d2052a13b1abc7309bbda0295f2d9b64"
+        },
+        "web/assets/b621f4e821e6b532e1a1.png": {
+            "bytes": 10025,
+            "sha256": "b621f4e821e6b532e1a1c5d3c198b7bef7d6cd1ab8ac047346222860d5edac35"
+        },
+        "web/assets/bb9480a370c58e3ca36a.png": {
+            "bytes": 22167,
+            "sha256": "bb9480a370c58e3ca36a8495d2f3bf70993c8951d1b035181e02840dd9a840ff"
+        },
+        "web/assets/79f3d0369f8e75497bc9.png": {
+            "bytes": 62067,
+            "sha256": "79f3d0369f8e75497bc9f8f7dde2e7c9d77aa2669fe7c565b8e5578b5d6297cf"
+        },
+        "web/widget.72c8824f93e0c2898814.css": {
+            "bytes": 30166,
+            "sha256": "72c8824f93e0c2898814d5804c5eb338337c7882ccb942affd5c3ed79c66da32"
+        },
+        "web/widget.a69a0ab0ca09e01a73de.js": {
+            "bytes": 97201,
+            "sha256": "a69a0ab0ca09e01a73de92288ef0b5fcb9f5b8f7c76fc7df878e03f93687a936"
+        },
+        "web/manifest.json": {
+            "bytes": 80,
+            "sha256": "3a249a6594764daf3fb98865314134522d71026624435cfc148f21ea9ef06773"
+        },
+        "web/.nojekyll": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "web/index.html": {
+            "bytes": 122,
+            "sha256": "c94b07919a593a6ede2876ecb13d56d734f19a89e286d934b26d871d0aadc387"
+        },
+        "streamelements-hosted/index.html": {
+            "bytes": 116,
+            "sha256": "f4ae79a809b6b7ee9dc297bae1dd1bd5f606f8732711c385f32e4bb7380e2714"
+        },
+        "streamelements-hosted/style.css": {
+            "bytes": 96,
+            "sha256": "9cd2779a83b7fb1239196ae6c887b7788be4ae6abfa9fa7dd95b3a00a6d129af"
+        },
+        "streamelements-hosted/index.js": {
+            "bytes": 1015,
+            "sha256": "fd640e9ede4f22dd959b6798be0155e38182343fe0bab44d4fa84be01edff75e"
+        },
+        "streamelements-hosted/fields.json": {
+            "bytes": 14704,
+            "sha256": "0a37a753d8ba5f6ec7534da0534b193ab215e495c61d3d28e2cb383b6669a3ff"
+        },
+        "streamelements-hosted/data.json": {
+            "bytes": 2108,
+            "sha256": "ed1afc35f2cf58df0811d3f7756d67cf99b6c277c54d71499006e9a1a0d096cf"
         }
     }
 }

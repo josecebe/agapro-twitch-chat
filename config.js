@@ -17,15 +17,21 @@ window.CHAT_WIDGET_CONFIG = {
     // Select the visual template; chat behavior is shared.
     template: 'classic',
     messageBackground: false,
-    // Alpha controls opacity in both local config and the StreamElements color picker.
-    messageBackgroundColor: 'rgba(0, 0, 0, 0.6)',
+    // Color and opacity are independent. Opacity also controls Berserk's texture.
+    messageBackgroundColor: '#000000',
+    messageBackgroundOpacity: 0.7,
     enableAnimations: true,
-    // Use "none" for immediate removal without particles.
+    // Berserk: slide the sword, badges and nickname in together.
+    berserkSwordAnimation: true,
+    // "blood" adds a blood burst on removal/expiry; "none" disables particles.
     moderationAnimation: 'dust',
 
     // Messages
     // Also supports stack-top.
     layout: 'stack-bottom',
+    chatAlignment: 'left', // 'left' or 'right'
+    // Maximum width of the whole chat, including padding; name headers may overflow.
+    chatMaxWidthPx: 525,
     maxMessages: 35,
     messageLifetimeSeconds: 0,
     messageGapPx: 10,
@@ -53,6 +59,8 @@ window.CHAT_WIDGET_CONFIG = {
     // Emotes and GIFs
     showTwitchEmotes: true,
     showSevenTVEmotes: true,
+    // Download resolution (1–4); emoteSizePx controls the displayed size separately.
+    sevenTVEmoteScale: 1,
     emoteSizePx: 34,
     showCheers: true,
     showTwitchGifs: false,

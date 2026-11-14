@@ -108,9 +108,10 @@
         return sets;
     };
     ChatWidget.Assets = class {
-        constructor(report, fetcher = ChatWidget.fetchJSON) {
+        constructor(report, fetcher = ChatWidget.fetchJSON, emoteScale = 1) {
             this.report = report;
             this.fetcher = fetcher;
+            this.emoteScale = Math.round(ChatWidget.clamp(emoteScale, 1, 4, 1));
             this.sourceChannels = new Map();
             this.sourceQueue = [];
             this.activeSources = 0;
@@ -313,7 +314,9 @@
                 }
                 const size = (file) =>
                     Number.isFinite(file.size) && file.size > 0 ? file.size : Infinity;
-                const preferred = (file) => /^1x\.(webp|avif)$/.test(file.name);
+                const preferred = (file) =>
+                    file.name.startsWith(this.emoteScale + 'x.') &&
+                    /\.(webp|avif)$/.test(file.name);
                 const formatRank = (file) =>
                     ['webp', 'avif', 'gif'].indexOf(file.name.split('.')[1]);
                 const file = files

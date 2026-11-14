@@ -378,10 +378,9 @@ test('7TV aliases, animation and zero-width behavior follow the source flags', (
     assert.equal(m.has('Original'), false);
     assert.equal(m.get('Alias').ratio, 2);
 });
-test('7TV selects the smallest 1x WebP/AVIF before other variants by size', () => {
-    const assets = new A.Assets(() => {});
-    const select = (files) =>
-        assets
+test('7TV selects the configured 1x–4x WebP/AVIF resolution with size-based fallbacks', () => {
+    const select = (files, scale = 1) =>
+        new A.Assets(() => {}, undefined, scale)
             .normalize(
                 {
                     emotes: [
@@ -409,6 +408,16 @@ test('7TV selects the smallest 1x WebP/AVIF before other variants by size', () =
         { name: '1x.png', size: 1 }
     ];
     const base = 'https://cdn.7tv.app/emote/id/';
+    for (const scale of [1, 2, 3, 4]) {
+        const files = [1, 2, 3, 4].flatMap((n) => [
+            { name: n + 'x.webp', size: n * 200, width: n * 64, height: n * 32 },
+            { name: n + 'x.avif', size: n * 100, width: n * 64, height: n * 32 }
+        ]);
+        assert.equal(select(files, scale).src, base + scale + 'x.avif');
+        assert.equal(select(files, String(scale)).ratio, 2);
+        assert.equal(select(files, String(scale)).src, base + scale + 'x.avif');
+    }
+    assert.equal(select(variants, 3).src, base + '2x.gif');
     const emote = select(variants);
     assert.equal(emote.src, base + '1x.avif');
     assert.equal(emote.animated, true);

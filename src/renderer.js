@@ -829,7 +829,7 @@
                 }
             }
             flush();
-            ChatWidget.templates.get(this.config.template).styleBody?.(node);
+            ChatWidget.templates.get(this.config.template).styleBody?.(node, this.config);
         }
         add(message) {
             if (message.provider && message.provider !== 'twitch') {
@@ -1179,25 +1179,33 @@
                 this.rows.splice(index, 1);
             }
         }
-        removeModerated(records) {
-            const rows = Array.isArray(records) ? records : [records];
+        emitRemovalEffect(rows) {
+            const Effect =
+                this.config.moderationAnimation === 'blood'
+                    ? ChatWidget.BloodEffects
+                    : ChatWidget.DustEffects;
             if (
                 rows.length &&
                 this.config.enableAnimations &&
                 this.config.moderationAnimation !== 'none' &&
-                typeof ChatWidget.DustEffects === 'function'
+                typeof Effect === 'function'
             ) {
                 try {
-                    if (!this.dust) {
-                        this.dust = new ChatWidget.DustEffects();
+                    if (this.removalEffects?.constructor !== Effect) {
+                        this.removalEffects?.stop();
+                        this.removalEffects = new Effect();
                     }
                     for (const record of rows) {
-                        this.dust.burst(record.row);
+                        this.removalEffects.burst(record.row);
                     }
                 } catch {
-                    this.dust?.stop();
+                    this.removalEffects?.stop();
                 }
             }
+        }
+        removeModerated(records) {
+            const rows = Array.isArray(records) ? records : [records];
+            this.emitRemovalEffect(rows);
             for (const record of rows) {
                 this.remove(record);
             }
@@ -1211,6 +1219,11 @@
                 (typeof window.matchMedia === 'function' &&
                     window.matchMedia('(prefers-reduced-motion: reduce)').matches)
             ) {
+                this.remove(record);
+                return;
+            }
+            if (this.config.moderationAnimation === 'blood') {
+                this.emitRemovalEffect([record]);
                 this.remove(record);
                 return;
             }
@@ -1335,7 +1348,7 @@
             for (const record of this.rows) {
                 this.clearExit(record);
             }
-            this.dust?.stop();
+            this.removalEffects?.stop();
             for (const assets of this.assetBindings || [this.assets]) {
                 assets.listeners.delete(this.repaint);
             }

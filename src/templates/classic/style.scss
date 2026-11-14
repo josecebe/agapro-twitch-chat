@@ -2,6 +2,13 @@
 
 #chat:is(:not([data-template]), [data-template='classic']) {
     .message {
+        // Notice backgrounds span the chat even when ordinary rows align right.
+        &.first-message,
+        &.highlighted-message,
+        &.channel-points-redemption {
+            width: 100%;
+        }
+
         .message-background & {
             background-color: var(--message-background, rgba(0, 0, 0, 0.3));
             padding: var(--classic-message-padding);

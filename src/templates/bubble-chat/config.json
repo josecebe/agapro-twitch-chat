@@ -24,7 +24,6 @@
         "--bubble-name-padding": "8px 20px 8px 10px",
         "--bubble-provider-margin": "8px",
         "--bubble-badges-padding": "14px",
-        "--bubble-badge-margin": "5.25px",
         "--bubble-reply-scale": "0.72em",
         "--bubble-reply-color": "#f4f4f5",
         "--bubble-notice-gap": "4px"

@@ -1,0 +1,30 @@
+{
+    "id": "berserk",
+    "name": "Berserk",
+    "order": 20,
+    "presentation": {
+        "glyphSpacing": false,
+        "paintActionText": false
+    },
+    "settings": {
+        "nameColor": "#ffffff",
+        "singleEmoteScale": 4,
+        "multipleEmoteScale": 2
+    },
+    "variables": {
+        "--berserk-shape-shadow": "drop-shadow(0 3px 3px rgba(0, 0, 0, 0.95))",
+        "--berserk-bubble-edge-scale": "0.25",
+        "--berserk-frame-padding": "30px",
+        "--berserk-overlap": "8px",
+        "--berserk-message-padding-inline": "39px",
+        "--berserk-message-padding-top": "20px",
+        "--berserk-emote-base": "var(--emote-size)",
+        "--berserk-name-padding": "8px calc(var(--berserk-hilt-width) + 10px) 8px 3px",
+        "--berserk-badges-padding": "calc(var(--berserk-tip-width) + 3px)",
+        "--berserk-reply-scale": "0.72em",
+        "--berserk-reply-color": "#f4f4f5",
+        "--berserk-notice-gap": "4px",
+        "--berserk-sword-height": "max(42px, calc(1.2em + 16px))",
+        "--berserk-message-padding-bottom": "24px"
+    }
+}

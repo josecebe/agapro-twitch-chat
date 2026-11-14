@@ -9,6 +9,7 @@ import { createFields } from './fields.mjs';
 import { stripIgnoredCharacters } from 'graphql';
 import { compileStyles, writeStyles } from './styles.mjs';
 import { readTemplates, compileTemplates, writeTemplates } from './templates.mjs';
+import { hostedFiles, pruneHostedFiles, defaultHostedBaseURL } from './hosted.mjs';
 
 export const projectRoot = fileURLToPath(new URL('../', import.meta.url));
 const localizationFiles = ['i18n', 'locales/en', 'locales/es'];
@@ -20,6 +21,7 @@ const libraryFiles = [
     'templates',
     'providers',
     'dust',
+    'blood',
     'renderer',
     'demo',
     'main'
@@ -66,7 +68,9 @@ const htmlOptions = {
 
 export async function buildProject({
     outputDirectory = path.join(projectRoot, 'dist'),
-    developmentCSS = false
+    developmentCSS = false,
+    preserveLocalConfig = false,
+    hostedBaseURL = defaultHostedBaseURL
 } = {}) {
     const outdir = path.resolve(outputDirectory);
     const protectedDirectories = ['src', 'scripts', 'tests', '.github'].map((name) =>
@@ -181,9 +185,17 @@ export async function buildProject({
         'fields.json': JSON.stringify(fields, null, 4) + '\n',
         'data.json': JSON.stringify(data, null, 4) + '\n'
     };
+    let localConfig = await readFile(path.join(projectRoot, 'config.js'), 'utf8');
+    if (preserveLocalConfig) {
+        try {
+            localConfig = await readFile(path.join(outdir, 'local/config.js'), 'utf8');
+        } catch (error) {
+            if (error.code !== 'ENOENT') throw error;
+        }
+    }
     const files = {
         'local/index.html': localHTML,
-        'local/config.js': await readFile(path.join(projectRoot, 'config.js'), 'utf8'),
+        'local/config.js': localConfig,
         ...Object.fromEntries(
             Object.entries(tabs).map(([name, content]) => ['streamelements/' + name, content])
         ),
@@ -198,6 +210,15 @@ export async function buildProject({
         'streamlabs/style.css': tabs['style.css'],
         'streamlabs/index.js': streamlabsJS
     };
+    Object.assign(
+        files,
+        await hostedFiles({
+            css: tabs['style.css'],
+            js: streamElementsJS,
+            tabs,
+            baseURL: hostedBaseURL
+        })
+    );
     const manifest = {
         sources: [
             ...new Set(
@@ -209,7 +230,13 @@ export async function buildProject({
                             path.relative(projectRoot, file).split(path.sep).join('/')
                         )
                     )
-                    .concat('src/streamelements.js', 'src/streamlabs.js', 'config.js', 'index.html')
+                    .concat(
+                        'src/streamelements.js',
+                        'src/streamelements-loader.js',
+                        'src/streamlabs.js',
+                        'config.js',
+                        'index.html'
+                    )
                     .concat(
                         styles.loadedUrls.map((url) =>
                             path.relative(projectRoot, fileURLToPath(url)).split(path.sep).join('/')
@@ -232,6 +259,7 @@ export async function buildProject({
         await mkdir(path.dirname(destination), { recursive: true });
         await writeFile(destination, content);
     }
+    await pruneHostedFiles(outdir, files);
     for (const name of ['fields', 'data']) {
         await rm(path.join(outdir, 'streamelements', name), { force: true });
     }
@@ -244,7 +272,11 @@ export async function buildProject({
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
     try {
-        const { outdir, manifest } = await buildProject({ developmentCSS: true });
+        const { outdir, manifest } = await buildProject({
+            developmentCSS: true,
+            preserveLocalConfig: true,
+            hostedBaseURL: process.env.HOSTED_BASE_URL || defaultHostedBaseURL
+        });
         for (const [name, info] of Object.entries(manifest.files)) {
             console.log(`${name}: ${(info.bytes / 1024).toFixed(1)} KiB`);
         }

@@ -1,7 +1,7 @@
 import { readWidgetScripts } from '../helpers/widget-scripts.mjs';
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, mkdtemp, readdir, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import vm from 'node:vm';
@@ -14,6 +14,7 @@ const defaults = await readConfig();
 const core = readWidgetScripts();
 const adapter = await readFile(new URL('../../src/streamelements.js', import.meta.url), 'utf8');
 const context = vm.createContext({ window: { ChatWidget: {} } });
+vm.runInContext(core, context);
 vm.runInContext(adapter, context);
 const configure = (detail) =>
     JSON.parse(JSON.stringify(context.window.ChatWidget.streamElementsConfig(defaults, detail)));
@@ -42,7 +43,27 @@ test('local build embeds the application and loads a separate readable config', 
     assert.doesNotMatch(html, /assets\/providers\/twitch\.png/);
     assert.equal((html.match(/<\/script>/g) || []).length, 2);
     new vm.Script(html.match(/<script>([\s\S]*?)<\/script>/)[1]);
-    assert.ok(Buffer.byteLength(html) < 110 * 1024);
+    // Budget application code separately from embedded PNG artwork and atlases.
+    const artworkBytes = [
+        ...html.matchAll(/data:image\/(?:png;base64,[A-Za-z0-9+/=]+|svg\+xml,[^"\s]+)/g)
+    ].reduce((total, match) => total + Buffer.byteLength(match[0]), 0);
+    assert.ok(Buffer.byteLength(html) - artworkBytes < 140 * 1024);
+});
+
+test('rebuilding can preserve local OBS settings and keeps the manifest accurate', async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'chat-widget-local-config-'));
+    temporaryDirectories.push(directory);
+    await buildProject({ outputDirectory: directory, preserveLocalConfig: true });
+    const file = path.join(directory, 'local/config.js');
+    const customConfig =
+        'window.CHAT_WIDGET_CONFIG = {sources:[{channel:"my-channel"}], template:"berserk", messageBackgroundOpacity:0.8};\n';
+    await writeFile(file, customConfig);
+    const rebuilt = await buildProject({ outputDirectory: directory, preserveLocalConfig: true });
+    assert.equal(await readFile(file, 'utf8'), customConfig);
+    assert.equal(
+        rebuilt.manifest.files['local/config.js'].sha256,
+        createHash('sha256').update(customConfig).digest('hex')
+    );
 });
 
 test('compiled GraphQL preserves the query while removing ignored whitespace', async () => {
@@ -54,7 +75,7 @@ test('compiled GraphQL preserves the query while removing ignored whitespace', a
     assert.doesNotMatch(query, /\n| {2}/);
 });
 
-test('StreamElements produces five tabs with JSON settings and no separate opacity field', async () => {
+test('StreamElements produces five tabs with separate background color and opacity controls', async () => {
     assert.deepEqual((await readdir(path.join(outdir, 'streamelements'))).sort(), [
         'data.json',
         'fields.json',
@@ -66,23 +87,63 @@ test('StreamElements produces five tabs with JSON settings and no separate opaci
         await readFile(path.join(outdir, 'streamelements/fields.json'), 'utf8')
     );
     const data = JSON.parse(await readFile(path.join(outdir, 'streamelements/data.json'), 'utf8'));
-    assert.equal(Object.hasOwn(fields, 'messageBackgroundOpacity'), false);
-    assert.equal(Object.hasOwn(data, 'messageBackgroundOpacity'), false);
+    assert.equal(fields.messageBackgroundColor.label, 'Background color');
+    assert.equal(fields.messageBackgroundOpacity.type, 'number');
+    assert.equal(data.berserkSwordAnimation, 'true');
+    assert.equal(
+        configure({ fieldData: { berserkSwordAnimation: 'false' } }).berserkSwordAnimation,
+        false
+    );
+    assert.equal(fields.chatMaxWidthPx.type, 'number');
+    assert.equal(fields.chatMaxWidthPx.group, 'Messages');
+    assert.equal(data.chatMaxWidthPx, 525);
+    assert.equal(fields.chatAlignment.options.right, 'Right');
+    assert.equal(data.chatAlignment, 'left');
+    assert.equal(configure({ fieldData: { chatAlignment: 'right' } }).chatAlignment, 'right');
+    assert.equal(fields.sevenTVEmoteScale.type, 'number');
+    assert.equal(fields.sevenTVEmoteScale.min, 1);
+    assert.equal(fields.sevenTVEmoteScale.max, 4);
+    assert.equal(fields.sevenTVEmoteScale.step, 1);
+    assert.equal(data.sevenTVEmoteScale, 1);
+    assert.equal(configure({ fieldData: { sevenTVEmoteScale: '4' } }).sevenTVEmoteScale, 4);
+    assert.equal(configure({ fieldData: { chatMaxWidthPx: '640' } }).chatMaxWidthPx, 640);
+    assert.equal(fields.moderationAnimation.options.blood, 'Blood burst');
+    assert.equal(
+        configure({ fieldData: { moderationAnimation: 'blood' } }).moderationAnimation,
+        'blood'
+    );
+    assert.equal(fields.messageBackgroundOpacity.min, 0);
+    assert.equal(fields.messageBackgroundOpacity.max, 1);
+    assert.equal(fields.messageBackgroundOpacity.step, 0.05);
+    assert.equal(data.messageBackgroundOpacity, defaults.messageBackgroundOpacity);
+    assert.equal(
+        configure({ fieldData: { messageBackgroundOpacity: '0.25' } }).messageBackgroundOpacity,
+        0.25
+    );
+    assert.equal(
+        configure({ fieldData: { messageBackgroundColor: 'rgba(12,34,56,0.35)' } })
+            .messageBackgroundOpacity,
+        0.35
+    );
     assert.equal(fields.firstMessageBackgroundColor.type, 'colorpicker');
     assert.equal(data.messageBackgroundColor, defaults.messageBackgroundColor);
     assert.equal(fields.channelMode.value, 'associated');
     assert.equal(fields.template.type, 'dropdown');
     assert.deepEqual(fields.template.options, {
         classic: 'Classic',
-        'bubble-chat': 'Bubble Chat'
+        'bubble-chat': 'Bubble Chat',
+        berserk: 'Berserk'
     });
     assert.equal(data.template, 'classic');
     assert.equal(fields.usernameGradient.group, 'Typography');
     assert.equal(fields.usernameGradient.type, 'dropdown');
-    assert.equal(data.usernameGradient, 'false');
+    assert.equal(data.usernameGradient, String(defaults.usernameGradient));
     assert.equal(configure({ fieldData: { template: 'bubble-chat' } }).template, 'bubble-chat');
     assert.equal(fields.language.type, 'dropdown');
-    assert.deepEqual(fields.language.options, { en: 'English', es: 'Spanish' });
+    assert.deepEqual(fields.language.options, {
+        en: 'English',
+        es: 'Spanish'
+    });
     assert.equal(fields.language.value, 'en');
     assert.equal(data.language, 'en');
     assert.equal(data.language, defaults.language);
@@ -289,4 +350,63 @@ test('rebuilding produces identical minified artifacts', async () => {
         outputDirectory: repeatDirectory
     });
     assert.deepEqual(another.manifest, result.manifest);
+});
+
+test('hosted StreamElements tabs stay small and publish hashed standalone resources', async () => {
+    const manifest = JSON.parse(await readFile(path.join(outdir, 'web/manifest.json'), 'utf8'));
+    assert.match(manifest.css, /^widget\.[a-f0-9]{20}\.css$/);
+    assert.match(manifest.js, /^widget\.[a-f0-9]{20}\.js$/);
+    const css = await readFile(path.join(outdir, 'web', manifest.css), 'utf8');
+    // The tiny SVG paint-shadow filter stays inline with its #s reference.
+    assert.doesNotMatch(css, /data:image\/png/);
+    const inlineImages = [...css.matchAll(/data:image\/svg\+xml,[^"\s)]*/g)];
+    assert.equal(inlineImages.length, 1);
+    assert.ok(inlineImages[0][0].endsWith('#s'));
+    assert.ok(Buffer.byteLength(css) < 40 * 1024);
+    const assets = await readdir(path.join(outdir, 'web/assets'));
+    assert.ok(assets.some((name) => name.endsWith('.svg')));
+    assert.ok(assets.some((name) => name.endsWith('.png')));
+    for (const name of assets) {
+        const bytes = await readFile(path.join(outdir, 'web/assets', name));
+        assert.ok(name.startsWith(createHash('sha256').update(bytes).digest('hex').slice(0, 20)));
+    }
+    const loader = await readFile(path.join(outdir, 'streamelements-hosted/index.js'), 'utf8');
+    assert.ok(Buffer.byteLength(loader) < 3000);
+    assert.match(loader, /https:\/\/josecebe.github.io\/agapro-twitch-chat\//);
+    assert.match(loader, /no-store/);
+    assert.match(loader, /onWidgetLoad/);
+    assert.ok((await readFile(path.join(outdir, 'streamelements-hosted/style.css'))).length < 300);
+    assert.deepEqual(
+        await readFile(path.join(outdir, 'streamelements-hosted/fields.json')),
+        await readFile(path.join(outdir, 'streamelements/fields.json'))
+    );
+    assert.deepEqual(
+        await readFile(path.join(outdir, 'streamelements-hosted/data.json')),
+        await readFile(path.join(outdir, 'streamelements/data.json'))
+    );
+});
+
+test('rebuilds remove obsolete hosted artifacts while preserving unrelated files', async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'chat-widget-prune-'));
+    temporaryDirectories.push(directory);
+    await buildProject({ outputDirectory: directory });
+    const stale = [
+        'web/widget.00000000000000000000.css',
+        'web/widget.00000000000000000000.js',
+        'web/assets/00000000000000000000.svg'
+    ];
+    for (const file of stale) await writeFile(path.join(directory, file), 'obsolete');
+    await writeFile(path.join(directory, 'web/notes.txt'), 'keep');
+    const rebuilt = await buildProject({ outputDirectory: directory });
+    for (const file of stale)
+        await assert.rejects(readFile(path.join(directory, file)), { code: 'ENOENT' });
+    assert.equal(await readFile(path.join(directory, 'web/notes.txt'), 'utf8'), 'keep');
+    for (const file of Object.keys(rebuilt.manifest.files).filter((file) =>
+        file.startsWith('web/')
+    )) {
+        assert.equal(
+            (await readFile(path.join(directory, file))).length,
+            rebuilt.manifest.files[file].bytes
+        );
+    }
 });

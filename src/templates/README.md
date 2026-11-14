@@ -40,9 +40,11 @@ Example config:
 The optional factory can implement:
 
 - `authorColor(row, color, { hasUserColor })`: decorate the author's shared row and return its text color. `hasUserColor` distinguishes a valid Twitch color from the shared fallback, even when their color values happen to match.
-- `styleBody(node)`: decorate the shared message body after its content is rendered.
+- `styleBody(node, userConfig)`: decorate the shared message body after its content is rendered; `userConfig` contains the current widget settings.
 - `paintAuthor(node, paint)`: return `undefined` to use the common text-paint renderer, an empty string to handle clearing a paint, or a background string when the template renders the paint itself. Image failures are still handled by the shared renderer.
 
 Channels, filters, fonts, message limits, media settings and other user controls belong to the shared `config.js`. Template configs never merge into that object. Private template settings do not generate additional StreamElements control groups. No template registers chat connections, handles events or replaces the HTML structure.
 
 `styles.css` and `templates.js` at the project root are generated development files. Standalone exports embed their contents and need no additional template files at runtime.
+
+Templates may provide an optional `prepare.cjs` build hook exporting a synchronous function. The catalog calls it before reading the template config. The hook may generate local asset stylesheets and return `{ sources: [...] }` for the build manifest. It should write files only when their contents change so CSS watch stays stable. Berserk uses this to discover and slice every bubble SVG folder automatically.

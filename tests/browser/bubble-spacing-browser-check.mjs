@@ -207,7 +207,7 @@ try {
                 const plain = renderer.rows[i];
                 const reply = renderer.rows[i + 1];
                 const context = rect(reply.reply.node);
-                results.push({width, preview,
+                results.push({width:rect(renderer.root).width, preview,
                     plainWidth:rect(plain.body).width, replyWidth:rect(reply.body).width,
                     plainHeight:rect(plain.body).height, replyHeight:rect(reply.body).height,
                     contextWidth:context.width, contextRight:context.right,

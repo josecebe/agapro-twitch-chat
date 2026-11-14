@@ -5,15 +5,7 @@ window.CHAT_WIDGET_CONFIG = {
     sources: [
         {
             provider: 'twitch',
-            channel: 'lylisoul'
-        },
-        {
-            provider: 'twitch',
-            channel: 'peereira7'
-        },
-        {
-            provider: 'twitch',
-            channel: 'lordjovan'
+            channel: 'elxokas'
         }
     ],
 
@@ -23,23 +15,27 @@ window.CHAT_WIDGET_CONFIG = {
 
     // Appearance
     // Select the visual template; chat behavior is shared.
-    template: 'classic',
+    template: 'berserk',
     messageBackground: false,
-    // Alpha controls opacity in both local config and the StreamElements color picker.
-    messageBackgroundColor: 'rgba(0, 0, 0, 0.6)',
+    // Color and opacity are independent; opacity also controls the Berserk texture.
+    messageBackgroundColor: '#000000',
+    messageBackgroundOpacity: 0.8,
     enableAnimations: true,
+    berserkSwordAnimation: true,
     // Use "none" for immediate removal without particles.
-    moderationAnimation: 'dust',
+    moderationAnimation: 'blood',
 
     // Messages
     // Also supports stack-top.
     layout: 'stack-bottom',
+    chatAlignment: 'leftr',
+    chatMaxWidthPx: 425,
     maxMessages: 35,
     messageLifetimeSeconds: 0,
     messageGapPx: 10,
 
     // Typography
-    fontSizePx: 25,
+    fontSizePx: 20,
     messageLineHeight: 1.2,
     fontFamily: 'Aclonica',
     // Optional Google Fonts overrides; empty strings keep the corresponding local fonts.
@@ -61,9 +57,11 @@ window.CHAT_WIDGET_CONFIG = {
     // Emotes and GIFs
     showTwitchEmotes: true,
     showSevenTVEmotes: true,
+    // Download resolution (1–4); displayed size is controlled by emoteSizePx.
+    sevenTVEmoteScale: 2,
     emoteSizePx: 34,
     showCheers: true,
-    showTwitchGifs: false,
+    showTwitchGifs: true,
     gifMaxHeightPx: 150,
 
     // Badges, icons and paints
@@ -71,9 +69,9 @@ window.CHAT_WIDGET_CONFIG = {
     showSevenTVBadges: true,
     // In Shared Chat, show the origin channel's avatar first among the badges.
     showSharedChatIcon: true,
-    badgeSizePx: 30,
+    badgeSizePx: 24,
     showProviderIcon: false,
-    providerIconSizePx: 30,
+    providerIconSizePx: 24,
     showSevenTVPaints: true,
 
     // Replies and notices

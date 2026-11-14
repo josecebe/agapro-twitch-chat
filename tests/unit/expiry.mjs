@@ -213,4 +213,42 @@ test('Expiry keeps its normal exit animation without emitting dust', () => {
     f.dispatch('animationend');
     assert.equal(f.row.removed, 1);
 });
+let bloodBursts = 0;
+context.window.ChatWidget.BloodEffects = class {
+    burst() {
+        bloodBursts++;
+    }
+    stop() {}
+};
+test('Blood mode bursts on expiry and removes the message immediately', () => {
+    const f = fixture();
+    f.renderer.config.moderationAnimation = 'blood';
+    const before = bloodBursts;
+    f.renderer.expire();
+    assert.equal(bloodBursts, before + 1);
+    assert.equal(f.row.removed, 1);
+    assert.equal(timers.size, 0);
+    assert.equal(f.classes.has('leaving'), false);
+    f.renderer.stop();
+});
+test('Blood mode moderates immediately and honours disabled/reduced animation', () => {
+    for (const disabled of [false, true]) {
+        const f = fixture();
+        f.renderer.config.moderationAnimation = 'blood';
+        f.renderer.config.enableAnimations = !disabled;
+        const before = bloodBursts;
+        f.renderer.removeModerated([f.record]);
+        assert.equal(bloodBursts, before + (disabled ? 0 : 1));
+        assert.equal(f.row.removed, 1);
+        f.renderer.stop();
+    }
+    reduced = true;
+    const f = fixture();
+    f.renderer.config.moderationAnimation = 'blood';
+    const before = bloodBursts;
+    f.renderer.expire();
+    assert.equal(bloodBursts, before);
+    assert.equal(f.row.removed, 1);
+    reduced = false;
+});
 console.log(`${count} tests PASS`);

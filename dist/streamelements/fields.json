@@ -32,7 +32,8 @@
         "type": "dropdown",
         "options": {
             "classic": "Classic",
-            "bubble-chat": "Bubble Chat"
+            "bubble-chat": "Bubble Chat",
+            "berserk": "Berserk"
         }
     },
     "messageBackground": {
@@ -46,10 +47,19 @@
         }
     },
     "messageBackgroundColor": {
-        "label": "Background color and opacity",
+        "label": "Background color",
         "group": "Appearance",
-        "value": "rgba(0, 0, 0, 0.6)",
+        "value": "#000000",
         "type": "colorpicker"
+    },
+    "messageBackgroundOpacity": {
+        "label": "Background opacity (0: transparent, 1: opaque)",
+        "group": "Appearance",
+        "value": 0.7,
+        "type": "number",
+        "min": 0,
+        "max": 1,
+        "step": 0.05
     },
     "enableAnimations": {
         "label": "Enable animations",
@@ -61,13 +71,24 @@
             "false": "No"
         }
     },
+    "berserkSwordAnimation": {
+        "label": "Berserk: animate sword entrance",
+        "group": "Appearance",
+        "value": "true",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
+    },
     "moderationAnimation": {
-        "label": "Moderation effect",
+        "label": "Message removal effect",
         "group": "Appearance",
         "value": "dust",
         "type": "dropdown",
         "options": {
             "dust": "Dust",
+            "blood": "Blood burst",
             "none": "None"
         }
     },
@@ -80,6 +101,25 @@
             "stack-bottom": "Newest at bottom",
             "stack-top": "Newest at top"
         }
+    },
+    "chatAlignment": {
+        "label": "Chat alignment",
+        "group": "Messages",
+        "value": "left",
+        "type": "dropdown",
+        "options": {
+            "left": "Left",
+            "right": "Right"
+        }
+    },
+    "chatMaxWidthPx": {
+        "label": "Maximum chat width (px)",
+        "group": "Messages",
+        "value": 525,
+        "type": "number",
+        "min": 160,
+        "max": 10000,
+        "step": 1
     },
     "maxMessages": {
         "label": "Maximum messages",
@@ -227,6 +267,15 @@
             "true": "Yes",
             "false": "No"
         }
+    },
+    "sevenTVEmoteScale": {
+        "label": "7TV emote resolution (1x–4x)",
+        "group": "Emotes and GIFs",
+        "value": 1,
+        "type": "number",
+        "min": 1,
+        "max": 4,
+        "step": 1
     },
     "emoteSizePx": {
         "label": "Emote size",

@@ -11,6 +11,36 @@
                     ? window.matchMedia('(prefers-reduced-motion: reduce)')
                     : null;
         }
+        get layerClass() {
+            return 'dust-layer';
+        }
+        get selector() {
+            return '.name, .body, .badge, .emote';
+        }
+        particleCount(area) {
+            return Math.min(100, Math.max(24, Math.ceil(area / 170)));
+        }
+        createParticle(region, now) {
+            return {
+                x: region.left + Math.random() * region.width,
+                y: region.top + region.height * (0.2 + Math.random() * 0.6),
+                vx: 25 + Math.random() * 100,
+                vy: -15 - Math.random() * 55,
+                size: 1 + Math.random() * 1.8,
+                color: region.color,
+                born: now,
+                life: 420 + Math.random() * 220
+            };
+        }
+        drawParticle(ctx, particle, progress, seconds) {
+            const size = particle.size * (1 - progress * 0.65);
+            ctx.fillRect(
+                particle.x + particle.vx * seconds,
+                particle.y + particle.vy * seconds - 12 * seconds * seconds,
+                size,
+                size
+            );
+        }
         burst(row) {
             if (this.motion?.matches) {
                 return;
@@ -21,7 +51,7 @@
                 return;
             }
             const regions = [];
-            for (const node of row.querySelectorAll('.name, .body, .badge, .emote')) {
+            for (const node of row.querySelectorAll(this.selector)) {
                 const color = window.getComputedStyle(node).color || '#ffffff';
                 for (const rect of node.getClientRects()) {
                     const left = Math.max(0, rect.left);
@@ -50,7 +80,7 @@
             }
             if (!this.canvas) {
                 this.canvas = document.createElement('canvas');
-                this.canvas.className = 'dust-layer';
+                this.canvas.className = this.layerClass;
                 this.canvas.setAttribute('aria-hidden', 'true');
                 this.context = this.canvas.getContext('2d');
                 if (!this.context) {
@@ -68,7 +98,7 @@
             this.context.setTransform(pixelWidth / width, 0, 0, pixelHeight / height, 0, 0);
             const now = performance.now();
             const area = regions.reduce((total, region) => total + region.width * region.height, 0);
-            const count = Math.min(100, Math.max(24, Math.ceil(area / 170)));
+            const count = this.particleCount(area);
             for (let index = 0; index < count; index++) {
                 let pick = Math.random() * area;
                 let region = regions[0];
@@ -79,16 +109,7 @@
                         break;
                     }
                 }
-                this.particles.push({
-                    x: region.left + Math.random() * region.width,
-                    y: region.top + region.height * (0.2 + Math.random() * 0.6),
-                    vx: 25 + Math.random() * 100,
-                    vy: -15 - Math.random() * 55,
-                    size: 1 + Math.random() * 1.8,
-                    color: region.color,
-                    born: now,
-                    life: 420 + Math.random() * 220
-                });
+                this.particles.push(this.createParticle(region, now));
             }
             if (this.particles.length > 512) {
                 this.particles.splice(0, this.particles.length - 512);
@@ -119,13 +140,7 @@
                 const seconds = age / 1000;
                 ctx.globalAlpha = (1 - progress) ** 1.5;
                 ctx.fillStyle = particle.color;
-                const size = particle.size * (1 - progress * 0.65);
-                ctx.fillRect(
-                    particle.x + particle.vx * seconds,
-                    particle.y + particle.vy * seconds - 12 * seconds * seconds,
-                    size,
-                    size
-                );
+                this.drawParticle(ctx, particle, progress, seconds);
             }
             this.particles.length = live;
             ctx.globalAlpha = 1;

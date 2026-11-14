@@ -5,6 +5,55 @@
     container-type: inline-size;
     align-items: flex-start;
     padding: var(--bubble-frame-padding);
+    overflow: visible;
+
+    &[data-alignment='right'] {
+        align-items: flex-end;
+
+        .message {
+            // A leading flexible track anchors the whole header on the right.
+            // End alignment also lets oversized nicknames overflow to the left.
+            grid-template-columns:
+                [start] minmax(0, 1fr) [provider] max-content [badges] max-content
+                [username] max-content [end];
+            justify-content: end;
+
+            &::after {
+                grid-area: header / provider / notice / end;
+            }
+
+            &::before {
+                grid-area: notice / start / end / end;
+                justify-self: end;
+                width: calc(100% - 2 * var(--bubble-body-margin));
+            }
+        }
+
+        .body {
+            grid-area: body / start / end / end;
+            justify-self: end;
+            width: calc(100% - 2 * var(--bubble-body-margin));
+            text-align: right;
+
+            &.bubble-single-emote {
+                text-align: center;
+            }
+        }
+
+        .first-message-label {
+            grid-area: notice / start / body / end;
+            justify-self: end;
+            width: calc(100% - 2 * var(--bubble-body-margin));
+        }
+
+        .reply-context {
+            grid-area: reply / start / header / end;
+            justify-self: end;
+            text-align: left;
+            margin-inline-start: calc(3 * var(--bubble-body-margin) - 100cqw);
+            margin-inline-end: var(--bubble-body-margin);
+        }
+    }
 
     .message {
         position: relative;
@@ -12,7 +61,7 @@
         display: grid;
         grid-template-columns:
             [provider] max-content [badges] max-content
-            [username] minmax(0, max-content) [space] minmax(0, 1fr) [end];
+            [username] max-content [space] minmax(0, 1fr) [end];
         grid-template-rows:
             [reply] var(--bubble-reply-track, 0px) [header] minmax(
                 var(--bubble-header-min-height),
@@ -51,6 +100,7 @@
             grid-area: notice / provider / end / end;
             margin-top: calc(-1 * var(--bubble-overlap));
             margin-inline: var(--bubble-body-margin);
+            max-width: calc(100cqw - 2 * var(--bubble-body-margin));
             background: var(--message-background, hsla(0, 0%, 0%, 0.54));
             border-radius: var(--bubble-body-radius);
             z-index: -1;
@@ -117,6 +167,8 @@
         font-weight: var(--username-weight, 400);
         line-height: 1.2;
         z-index: 1;
+        white-space: nowrap;
+        overflow: visible;
     }
 
     .body {
@@ -124,6 +176,8 @@
         grid-area: body / provider / end / end;
         display: block;
         min-width: 0;
+        // A long name may extend the header tracks beyond the chat width.
+        max-width: calc(100cqw - 2 * var(--bubble-body-margin));
         height: auto;
         max-height: none;
         overflow: visible;
@@ -175,6 +229,7 @@
         grid-area: notice / provider / body / end;
         margin: calc(-1 * var(--bubble-overlap)) 0 0;
         margin-inline: var(--bubble-body-margin);
+        max-width: calc(100cqw - 2 * var(--bubble-body-margin));
         padding: var(--bubble-content-inset) var(--bubble-padding) 0;
         text-align: right;
 
@@ -186,7 +241,6 @@
 
     .badge {
         vertical-align: middle;
-        margin-right: var(--bubble-badge-margin);
     }
 
     .action .body {

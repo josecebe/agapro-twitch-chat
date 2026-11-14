@@ -163,7 +163,8 @@ function boot(sources, failChannel = '', options = {}) {
     vm.runInContext(providers, context);
     const a = context.window.ChatWidget;
     class Assets {
-        constructor() {
+        constructor(report, fetcher, emoteScale) {
+            this.emoteScale = emoteScale;
             this.listeners = new Set();
             this.stops = 0;
         }
@@ -312,6 +313,49 @@ test('Empty source arrays report configuration errors without opening connection
     assert.equal(empty.panel.hidden, false);
 });
 empty.listeners.get('pagehide')();
+
+test('7TV resolution defaults to 1x and reaches every source catalog', () => {
+    for (const [value, expected] of [
+        [undefined, 1],
+        ['4', 4],
+        [3, 3],
+        [9, 4],
+        [0, 1],
+        ['invalid', 1]
+    ]) {
+        for (const sources of [[], entries]) {
+            const app = boot(sources, '', { sevenTVEmoteScale: value });
+            assert.equal(app.runtime.config.sevenTVEmoteScale, expected);
+            assert.equal(app.runtime.assets.emoteScale, expected);
+            for (const source of app.runtime.sources)
+                assert.equal(source.assets.emoteScale, expected);
+            app.listeners.get('pagehide')();
+        }
+    }
+});
+
+test('Chat width defaults to 525 pixels and normalizes configured bounds', () => {
+    for (const [value, expected] of [
+        [undefined, 525],
+        [640, 640],
+        [-1, 160],
+        [20000, 10000],
+        ['invalid', 525]
+    ]) {
+        const app = boot([], '', { chatMaxWidthPx: value });
+        assert.equal(app.runtime.config.chatMaxWidthPx, expected);
+        assert.equal(app.properties.get('--chat-max-width'), expected + 'px');
+        app.listeners.get('pagehide')();
+    }
+});
+
+test('Chat alignment accepts right and falls back to left', () => {
+    for (const value of [undefined, 'left', 'right', 'invalid']) {
+        const app = boot([], '', { chatAlignment: value });
+        assert.equal(app.runtime.config.chatAlignment, value === 'right' ? 'right' : 'left');
+        app.listeners.get('pagehide')();
+    }
+});
 test('Message backgrounds support color, opacity, disabling and safe bounds', () => {
     for (const [options, color, enabled] of [
         [{}, 'rgba(0,0,0,0.3)', false],
@@ -326,6 +370,15 @@ test('Message backgrounds support color, opacity, disabling and safe bounds', ()
             {
                 messageBackground: true,
                 messageBackgroundColor: '#123abc',
+                messageBackgroundOpacity: 0.5
+            },
+            'rgba(18,58,188,0.5)',
+            true
+        ],
+        [
+            {
+                messageBackground: true,
+                messageBackgroundColor: 'rgba(18,58,188,0.1)',
                 messageBackgroundOpacity: 0.5
             },
             'rgba(18,58,188,0.5)',
@@ -358,6 +411,10 @@ test('Message backgrounds support color, opacity, disabling and safe bounds', ()
     ]) {
         const app = boot([], '', options);
         assert.equal(app.properties.get('--message-background'), color);
+        assert.equal(
+            Number(app.properties.get('--message-background-opacity')),
+            Number(color.match(/,([^,]+)\)$/)[1])
+        );
         assert.equal(app.classes.get('message-background'), enabled);
         app.listeners.get('pagehide')();
     }

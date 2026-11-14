@@ -9,9 +9,12 @@
         const config = {
             ...input,
             template,
+            chatAlignment: input.chatAlignment === 'right' ? 'right' : 'left',
             language: ChatWidget.i18n.normalizeLanguage(input.language),
             sources: normalized.sources,
             maxMessages: Math.round(ChatWidget.clamp(input.maxMessages, 1, 200, 35)),
+            chatMaxWidthPx: Math.round(ChatWidget.clamp(input.chatMaxWidthPx, 160, 10000, 525)),
+            sevenTVEmoteScale: Math.round(ChatWidget.clamp(input.sevenTVEmoteScale, 1, 4, 1)),
             messageLifetimeSeconds: ChatWidget.clamp(input.messageLifetimeSeconds, 0, 86400),
             botLogins: (input.botLogins || []).map((botLogin) => String(botLogin).toLowerCase())
         };
@@ -48,6 +51,7 @@
         );
         const root = document.getElementById('chat');
         root.setAttribute?.('data-template', template);
+        root.setAttribute?.('data-alignment', config.chatAlignment);
         root.setAttribute?.('aria-label', t('liveChat'));
         root.replaceChildren?.();
         root.classList.toggle('top', config.layout === 'stack-top');
@@ -57,14 +61,15 @@
             config.usernameBold === true ? '700' : '400'
         );
         document.body.classList.toggle('shadow', !!config.textShadow);
-        const background = ChatWidget.resolveColor(
+        const background = ChatWidget.resolveBackground(
             config.messageBackgroundColor,
-            config.messageBackgroundOpacity === undefined ? 'rgba(0,0,0,0.3)' : '#000000',
-            config.messageBackgroundOpacity === undefined
-                ? 1
-                : ChatWidget.clamp(config.messageBackgroundOpacity, 0, 1, 0.3)
+            config.messageBackgroundOpacity
         );
         document.documentElement.style.setProperty('--message-background', background.css);
+        document.documentElement.style.setProperty(
+            '--message-background-opacity',
+            String(background.alpha)
+        );
         document.body.classList.toggle(
             'message-background',
             config.messageBackground === true && background.alpha > 0
@@ -147,6 +152,10 @@
             ChatWidget.clamp(config.messageGapPx, 0, 100, 8) + 'px'
         );
         document.documentElement.style.setProperty(
+            '--chat-max-width',
+            config.chatMaxWidthPx + 'px'
+        );
+        document.documentElement.style.setProperty(
             '--reply-gap',
             ChatWidget.clamp(config.replyGapPx, -100, 100, 4) + 'px'
         );
@@ -178,10 +187,13 @@
             ...source,
             assets: new ChatWidget.Assets(
                 (key, value) => report(source.id + ' · ' + key, value),
-                fetchAssets
+                fetchAssets,
+                config.sevenTVEmoteScale
             )
         }));
-        const assets = sources[0]?.assets || new ChatWidget.Assets(report, fetchAssets);
+        const assets =
+            sources[0]?.assets ||
+            new ChatWidget.Assets(report, fetchAssets, config.sevenTVEmoteScale);
         const paints = new ChatWidget.Paints(report);
         const renderer = new ChatWidget.Renderer(root, config, assets, paints);
         const connections = [];

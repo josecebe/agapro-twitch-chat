@@ -44,6 +44,11 @@ try {
         window.testConfig = ${JSON.stringify({ ...defaults, sources: [], enableAnimations: false, usernameGradient: false })};
     })()`);
     await browser.evaluate(readWidgetScripts(['providers', 'renderer', 'main']));
+    const defaultBackground = await browser.evaluate(`(() => {
+        const style = document.createElement('span').style;
+        style.backgroundColor = ChatWidget.resolveBackground(${JSON.stringify(defaults.messageBackgroundColor)}, ${defaults.messageBackgroundOpacity}).css;
+        return style.backgroundColor;
+    })()`);
     await browser.evaluate(`(() => {
         window.messageMarkup = (index = 0) => {
             const node = CHAT_WIDGET_RUNTIME.renderer.rows[index].row.cloneNode(true);
@@ -151,7 +156,7 @@ try {
         };
     })()`);
     assert.equal(layout.padding, '30px');
-    assert.equal(layout.background, defaults.messageBackgroundColor);
+    assert.equal(layout.background, defaultBackground);
     assert.equal(layout.radius, '30px / 25px');
     assert.equal(layout.nameBackground, 'rgb(145, 70, 255)');
     assert.equal(layout.textSize, defaults.fontSizePx + 'px');
@@ -289,16 +294,17 @@ try {
     assert.equal(missingColors[4].background, 'rgb(255, 255, 0)');
     assert.equal(missingColors[5].background, 'rgb(17, 17, 17)');
     const backgrounds = await browser.evaluate(`(async () => {
-        const original = testConfig.messageBackgroundColor;
+        const original = {...testConfig};
         const results = [];
-        for (const color of ['rgba(20, 60, 120, 0.25)', 'rgba(20, 60, 120, 0)', '#143c78']) {
+        for (const [color,opacity] of [['#143c78',0.25], ['#143c78',0], ['#143c78',1]]) {
             testConfig.messageBackgroundColor = color;
+            testConfig.messageBackgroundOpacity = opacity;
             await renderTemplate('bubble-chat');
             const row = CHAT_WIDGET_RUNTIME.renderer.rows[0].row;
             results.push({body:getComputedStyle(row,'::before').backgroundColor,
                 name:getComputedStyle(row,'::after').backgroundColor});
         }
-        testConfig.messageBackgroundColor = original;
+        Object.assign(testConfig, original);
         return results;
     })()`);
     assert.deepEqual(
@@ -326,8 +332,8 @@ try {
     })()`);
     assert.equal(firstMessages[0].first, 'rgba(100, 40, 10, 0.35)');
     assert.equal(firstMessages[1].first, 'rgba(100, 40, 10, 0)');
-    assert.equal(firstMessages[2].first, defaults.messageBackgroundColor);
-    assert.ok(firstMessages.every((item) => item.normal === defaults.messageBackgroundColor));
+    assert.equal(firstMessages[2].first, defaultBackground);
+    assert.ok(firstMessages.every((item) => item.normal === defaultBackground));
     assert.ok(firstMessages.every((item) => item.name === layout.nameBackground));
     const fontSizes = await browser.evaluate(`(async () => {
         const original = testConfig.fontSizePx;

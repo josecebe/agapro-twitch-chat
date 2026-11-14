@@ -4,10 +4,20 @@ const specifications = {
     language: ['Chat language', 'Language'],
     template: ['Style template', 'Appearance'],
     messageBackground: ['Message background', 'Appearance'],
-    messageBackgroundColor: ['Background color and opacity', 'Appearance'],
+    messageBackgroundColor: ['Background color', 'Appearance'],
+    messageBackgroundOpacity: [
+        'Background opacity (0: transparent, 1: opaque)',
+        'Appearance',
+        0,
+        1,
+        0.05
+    ],
     enableAnimations: ['Enable animations', 'Appearance'],
-    moderationAnimation: ['Moderation effect', 'Appearance'],
+    berserkSwordAnimation: ['Berserk: animate sword entrance', 'Appearance'],
+    moderationAnimation: ['Message removal effect', 'Appearance'],
     layout: ['Message order', 'Messages'],
+    chatAlignment: ['Chat alignment', 'Messages'],
+    chatMaxWidthPx: ['Maximum chat width (px)', 'Messages', 160, 10000],
     maxMessages: ['Maximum messages', 'Messages', 1, 200],
     messageLifetimeSeconds: ['Message lifetime in seconds (0: never expire)', 'Messages', 0, 86400],
     messageGapPx: ['Message spacing (px)', 'Messages', 0, 100],
@@ -32,6 +42,7 @@ const specifications = {
     textShadow: ['Text shadow', 'Typography'],
     showTwitchEmotes: ['Show Twitch emotes', 'Emotes and GIFs'],
     showSevenTVEmotes: ['Show 7TV emotes, including Shared Chat', 'Emotes and GIFs'],
+    sevenTVEmoteScale: ['7TV emote resolution (1x–4x)', 'Emotes and GIFs', 1, 4],
     emoteSizePx: ['Emote size', 'Emotes and GIFs', 16, 160],
     showCheers: ['Show Cheers/Bits', 'Emotes and GIFs'],
     showTwitchGifs: ['Show Twitch GIFs', 'Emotes and GIFs'],
@@ -72,7 +83,7 @@ const specifications = {
 function flatten(defaults, prefix = '') {
     const result = {};
     for (const [key, value] of Object.entries(defaults)) {
-        if (key === 'sources' || key === 'messageBackgroundOpacity') {
+        if (key === 'sources') {
             continue;
         }
         const field = prefix ? prefix + key[0].toUpperCase() + key.slice(1) : key;
@@ -136,7 +147,10 @@ export function createFields(config, { templates = readTemplates() } = {}) {
                 options: templateOptions(templates)
             });
         } else if (key === 'language') {
-            Object.assign(field, { type: 'dropdown', options: { en: 'English', es: 'Spanish' } });
+            Object.assign(field, {
+                type: 'dropdown',
+                options: { en: 'English', es: 'Spanish' }
+            });
         } else if (['googleFont', 'usernameGoogleFont', 'textGoogleFont'].includes(key)) {
             field.type = 'googleFont';
         } else if (key.endsWith('Color')) {
@@ -144,8 +158,10 @@ export function createFields(config, { templates = readTemplates() } = {}) {
         } else if (key === 'moderationAnimation') {
             Object.assign(field, {
                 type: 'dropdown',
-                options: { dust: 'Dust', none: 'None' }
+                options: { dust: 'Dust', blood: 'Blood burst', none: 'None' }
             });
+        } else if (key === 'chatAlignment') {
+            Object.assign(field, { type: 'dropdown', options: { left: 'Left', right: 'Right' } });
         } else if (key === 'layout') {
             Object.assign(field, {
                 type: 'dropdown',

@@ -80,7 +80,7 @@ try {
     return {
         removedImmediately,
         canvasVisible: !!canvas,
-        particles: r.dust?.particles.length,
+        particles: r.removalEffects?.particles.length,
         paintedPixels: painted
     };
 })();
@@ -95,7 +95,7 @@ try {
     assert.ok(result.paintedPixels > 0);
     await new Promise((r) => setTimeout(r, 800));
     result.cleaned = await browser.evaluate(
-        `!document.querySelector('.dust-layer')&&CHAT_WIDGET_RUNTIME.renderer.dust.particles.length===0`
+        `!document.querySelector('.dust-layer')&&CHAT_WIDGET_RUNTIME.renderer.removalEffects.particles.length===0`
     );
     assert.ok(result.cleaned);
     await browser.send('Emulation.setEmulatedMedia', {
