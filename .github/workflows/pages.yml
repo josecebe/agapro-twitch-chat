@@ -24,7 +24,7 @@ jobs:
               with:
                   node-version: 24
                   cache: npm
-            - uses: actions/configure-pages@v5
+            - uses: actions/configure-pages@v6
               id: pages
             - run: npm ci --ignore-scripts
             - run: npm test
