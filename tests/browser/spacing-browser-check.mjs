@@ -177,7 +177,7 @@ try {
         }));
     })()`);
     assert.ok(
-        fitted.every((record) => record.visible),
+        fitted.some((record) => !record.visible),
         JSON.stringify(fitted)
     );
     assert.deepEqual(
@@ -206,14 +206,21 @@ try {
             const afterExit = renderer.rows.map(record => record.t.id);
             renderer.root.style.height = '80px';
             renderer.fit();
-            return {partial, afterExit, oversized:renderer.rows.map(record => record.t.id)};
+            const oversized = renderer.rows.map(record => record.t.id);
+            while (renderer.rows.length > 1) renderer.remove(renderer.rows.at(-1));
+            renderer.root.style.height = '180px';
+            renderer.fit();
+            const restoredFrame = renderer.root.getBoundingClientRect();
+            const restoredRow = renderer.rows[0].row.getBoundingClientRect();
+            return {partial, afterExit, oversized, restored: renderer.rows[0].t.id === 'edge-first' && restoredRow.bottom > restoredFrame.top && restoredRow.top < restoredFrame.bottom};
         })()`);
         assert.deepEqual(
             clipping,
             {
                 partial: { count: 2, clipped: true },
-                afterExit: ['edge-second', 'edge-third'],
-                oversized: ['edge-third']
+                afterExit: ['edge-first', 'edge-second', 'edge-third'],
+                oversized: ['edge-first', 'edge-second', 'edge-third'],
+                restored: true
             },
             layout
         );

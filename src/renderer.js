@@ -1425,20 +1425,9 @@
             }
             if (this.config.devPreserveOffscreenMessages === true) {
                 this.followHistoryBottom();
-                return;
             }
-            const frame = this.root.getBoundingClientRect?.();
-            const outsideFrame = () => {
-                if (!frame) return false;
-                const oldest = this.rows[0].row.getBoundingClientRect();
-                return this.config.layout === 'stack-top'
-                    ? oldest.top >= frame.bottom
-                    : oldest.bottom <= frame.top;
-            };
-            // Keep partially visible messages until their entire row leaves the frame.
-            while (this.rows.length > 1 && outsideFrame()) {
-                this.remove(this.rows[0]);
-            }
+            // Offscreen rows remain in the bounded history so removing newer
+            // messages can reveal them again. add() enforces maxMessages.
         }
         refresh() {
             for (const record of this.rows) {

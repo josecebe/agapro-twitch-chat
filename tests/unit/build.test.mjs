@@ -49,7 +49,8 @@ test('local build embeds the application and loads a separate readable config', 
     const artworkBytes = [
         ...html.matchAll(/data:image\/(?:png;base64,[A-Za-z0-9+/=]+|svg\+xml,[^"\s]+)/g)
     ].reduce((total, match) => total + Buffer.byteLength(match[0]), 0);
-    assert.ok(Buffer.byteLength(html) - artworkBytes < 140 * 1024);
+    // Includes the 7TV live-event client and its reconnect/resync handling.
+    assert.ok(Buffer.byteLength(html) - artworkBytes < 150 * 1024);
 });
 
 test('rebuilding replaces local OBS settings from the root config and keeps the manifest accurate', async () => {

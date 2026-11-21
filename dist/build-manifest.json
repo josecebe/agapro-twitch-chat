@@ -65,8 +65,8 @@
     ],
     "files": {
         "local/index.html": {
-            "bytes": 1597844,
-            "sha256": "6627d5945c8bd319e4e12643aee319723cc6d6022bba836f35702efe82f3baee"
+            "bytes": 1602214,
+            "sha256": "471f0f528b2fd90c35e6930340239c1e9eb245ef05aa1748fe06d3e2badd5f53"
         },
         "local/config.js": {
             "bytes": 3952,
@@ -268,13 +268,13 @@
             "bytes": 38826,
             "sha256": "a9231f6d781a02da9d8d8cf6db34f6b630f14f3e5756d1233089d4d284e9820c"
         },
-        "web/widget.358f6e77e286d2fbd6f6.js": {
-            "bytes": 109110,
-            "sha256": "358f6e77e286d2fbd6f68400b5d9d4c5b40866eccb42d70d2f635804fe14dcfe"
+        "web/widget.bfda234feb9bf04cb129.js": {
+            "bytes": 113480,
+            "sha256": "bfda234feb9bf04cb129e1156147edb5117fc52a6fc866f02af99edb8ba41488"
         },
         "web/manifest.json": {
             "bytes": 80,
-            "sha256": "7c81c820f2567ba5aa957e10c74ffb2b45fd8e72012360d800007a0d3a06ae44"
+            "sha256": "7384491d3ad300249a3f8302aefdc22939ce5dfa7a4105f084cc6955ac344c07"
         },
         "web/.nojekyll": {
             "bytes": 0,

@@ -54,11 +54,13 @@
                 return fetcher(url, options);
             }
             const old = cache.get(url);
-            if (old && old.expires > Date.now()) {
+            const fresh = ['no-cache', 'reload', 'no-store'].includes(options?.cache);
+            if (old && (old.pending || (!fresh && old.expires > Date.now()))) {
                 return old.promise;
             }
             const entry = {
-                expires: Date.now() + ttl
+                expires: Date.now() + ttl,
+                pending: true
             };
             entry.promise = Promise.resolve()
                 .then(() => fetcher(url, options))
@@ -67,6 +69,9 @@
                         cache.delete(url);
                     }
                     throw error;
+                })
+                .finally(() => {
+                    entry.pending = false;
                 });
             cache.set(url, entry);
             return entry.promise;
@@ -119,6 +124,168 @@
             this.globalEmotes = new Map();
             this.channelEmotes = new Map();
             this.listeners = new Set();
+            this.emoteSets = new Map();
+            this.liveEmoteJobs = new Map();
+        }
+        watchEmoteSet(roomId, set) {
+            if (this.stopped) return;
+            const key = roomId || 'global';
+            const id = typeof set?.id === 'string' && /^[a-zA-Z0-9_-]+$/.test(set.id) ? set.id : '';
+            if (this.emoteSets.get(key) === id) return;
+            if (id) this.emoteSets.set(key, id);
+            else this.emoteSets.delete(key);
+            this.connectEmoteEvents();
+        }
+        connectEmoteEvents() {
+            if (
+                this.stopped ||
+                !this.config?.showSevenTVEmotes ||
+                typeof EventSource === 'undefined'
+            )
+                return;
+            for (const key of this.emoteSets.keys()) {
+                if (key !== 'global' && key !== this.channelId && !this.sourceChannels.has(key))
+                    this.emoteSets.delete(key);
+            }
+            const ids = [...new Set(this.emoteSets.values())].sort();
+            const signature = ids.join(',');
+            if (this.emoteEventSource && signature === this.emoteEventSignature) return;
+            this.emoteEventSource?.close();
+            clearTimeout(this.emoteHeartbeat);
+            clearTimeout(this.emoteEventRetry);
+            this.emoteEventSource = null;
+            this.emoteEventSignature = signature;
+            if (!ids.length) return;
+            const subscriptions = ids.map((id) => `emote_set.*<object_id=${id}>`).join(',');
+            let stream;
+            try {
+                stream = new EventSource(
+                    'https://events.7tv.io/v3@' + encodeURIComponent(subscriptions)
+                );
+            } catch {
+                this.emoteEventRetry = setTimeout(() => this.connectEmoteEvents(), 10000);
+                return;
+            }
+            this.emoteEventSource = stream;
+            const current = () => !this.stopped && this.emoteEventSource === stream;
+            let heartbeatInterval = 15000;
+            const heartbeat = () => {
+                if (!current()) return;
+                clearTimeout(this.emoteHeartbeat);
+                this.emoteHeartbeat = setTimeout(() => restart(), heartbeatInterval * 3);
+            };
+            stream.addEventListener('hello', (event) => {
+                try {
+                    const payload = JSON.parse(event.data);
+                    const interval = Number((payload.d || payload).heartbeat_interval);
+                    if (interval > 0)
+                        heartbeatInterval = Math.max(1000, Math.min(120000, interval));
+                } catch {
+                    /* Retain the default heartbeat interval. */
+                }
+                heartbeat();
+            });
+            stream.addEventListener('heartbeat', heartbeat);
+            stream.addEventListener('open', () => {
+                if (!current()) return;
+                heartbeat();
+                this.report('7TV events', 'connected');
+                // A new connection may have missed events. Revalidate each complete set.
+                for (const id of ids) this.queueEmoteSetReload(id);
+            });
+            stream.addEventListener('dispatch', (event) => {
+                if (!current()) return;
+                heartbeat();
+                try {
+                    const payload = JSON.parse(event.data);
+                    const data = payload.d || payload;
+                    if (data.type?.startsWith('emote_set.') && ids.includes(data.body?.id)) {
+                        this.queueEmoteSetReload(data.body.id);
+                    }
+                } catch {
+                    /* Ignore malformed event frames; polling remains available. */
+                }
+            });
+            stream.addEventListener('error', () => {
+                if (!current()) return;
+                clearTimeout(this.emoteHeartbeat);
+                this.report('7TV events', 'reconnecting · periodic refresh remains active');
+                if (stream.readyState === 2) restart();
+            });
+            const restart = (delay = 10000) => {
+                if (!current()) return;
+                stream.close();
+                clearTimeout(this.emoteHeartbeat);
+                this.emoteEventSource = null;
+                clearTimeout(this.emoteEventRetry);
+                if (delay !== false)
+                    this.emoteEventRetry = setTimeout(() => this.connectEmoteEvents(), delay);
+            };
+            stream.addEventListener('reconnect', () => restart());
+            stream.addEventListener('end_of_stream', (event) => {
+                let code;
+                try {
+                    const payload = JSON.parse(event.data);
+                    code = (payload.d || payload).code;
+                } catch {
+                    /* Retry an unexpected shutdown. */
+                }
+                const fatal = [4001, 4002, 4003, 4004, 4005, 4009, 4010, 4011].includes(code);
+                restart(fatal ? false : code === 4007 ? 300000 : 10000);
+            });
+        }
+        queueEmoteSetReload(id) {
+            if (this.stopped || ![...this.emoteSets.values()].includes(id)) return;
+            const existing = this.liveEmoteJobs.get(id);
+            if (existing) {
+                if (existing.running) existing.dirty = true;
+                return;
+            }
+            const job = { dirty: false };
+            this.liveEmoteJobs.set(id, job);
+            job.timer = setTimeout(async () => {
+                job.running = true;
+                try {
+                    const set = await this.fetcher(
+                        'https://7tv.io/v3/emote-sets/' + encodeURIComponent(id),
+                        { cache: 'no-cache' }
+                    );
+                    if (this.stopped) return;
+                    for (const [room, watchedId] of this.emoteSets) {
+                        if (watchedId !== id) continue;
+                        const map = this.normalize(set, room);
+                        if (room === 'global') this.globalEmotes = map;
+                        else if (room === this.channelId) this.channelEmotes = map;
+                        else {
+                            const source = this.sourceChannels.get(room);
+                            if (!source) continue;
+                            source.emotes = map;
+                            source.emotesDue = Date.now() + 600000;
+                        }
+                    }
+                    this.changed();
+                    this.report('7TV live emotes', 'updated');
+                } catch (error) {
+                    if (this.stopped) return;
+                    if (error.status === 404) {
+                        for (const [room, watchedId] of this.emoteSets) {
+                            if (watchedId !== id) continue;
+                            if (room === 'global') this.globalEmotes = new Map();
+                            else if (room === this.channelId) this.channelEmotes = new Map();
+                            else if (this.sourceChannels.has(room))
+                                this.sourceChannels.get(room).emotes = new Map();
+                            this.emoteSets.delete(room);
+                        }
+                        this.connectEmoteEvents();
+                        this.changed();
+                    }
+                    // Keep the last good catalog on network errors and rate limits.
+                    this.report('7TV live emotes', error.message + ' · keeping cached emotes');
+                } finally {
+                    if (this.liveEmoteJobs.get(id) === job) this.liveEmoteJobs.delete(id);
+                    if (!this.stopped && job.dirty) this.queueEmoteSetReload(id);
+                }
+            }, 250);
         }
         changed() {
             for (const listener of this.listeners) {
@@ -269,16 +436,19 @@
                     (async () => {
                         try {
                             const data = await this.fetcher(
-                                'https://7tv.io/v3/users/twitch/' + encodeURIComponent(source.id)
+                                'https://7tv.io/v3/users/twitch/' + encodeURIComponent(source.id),
+                                { cache: 'no-cache' }
                             );
                             let set = data.emote_set;
-                            if (!set && data.emote_set_id) {
+                            if (set?.id || data.emote_set_id) {
                                 set = await this.fetcher(
                                     'https://7tv.io/v3/emote-sets/' +
-                                        encodeURIComponent(data.emote_set_id)
+                                        encodeURIComponent(set?.id || data.emote_set_id),
+                                    { cache: 'no-cache' }
                                 );
                             }
                             source.emotes = set ? this.normalize(set, source.id) : new Map();
+                            this.watchEmoteSet(source.id, set);
                             source.emotesDue = Date.now() + 600000;
                             this.report(
                                 '7TV origen ' + source.id,
@@ -287,6 +457,7 @@
                         } catch (error) {
                             if (error.status === 404) {
                                 source.emotes = new Map();
+                                this.watchEmoteSet(source.id, null);
                             }
                             source.emotesDue =
                                 Date.now() +
@@ -377,27 +548,33 @@
                 const data = await this.fetcher(
                     id
                         ? 'https://7tv.io/v3/users/twitch/' + encodeURIComponent(id)
-                        : 'https://7tv.io/v3/emote-sets/global'
+                        : 'https://7tv.io/v3/emote-sets/global',
+                    { cache: 'no-cache' }
                 );
                 if (id && this.channelId !== id) {
                     return;
                 }
                 let set = id ? data.emote_set : data;
-                if (!set && data.emote_set_id) {
+                if (id && (set?.id || data.emote_set_id)) {
                     set = await this.fetcher(
-                        'https://7tv.io/v3/emote-sets/' + encodeURIComponent(data.emote_set_id)
+                        'https://7tv.io/v3/emote-sets/' +
+                            encodeURIComponent(set?.id || data.emote_set_id),
+                        { cache: 'no-cache' }
                     );
                 }
                 const map = set ? this.normalize(set, key) : new Map();
-                if (id && this.channelId !== id) {
+                if (this.stopped || (id && this.channelId !== id)) {
                     return;
                 }
                 this[id ? 'channelEmotes' : 'globalEmotes'] = map;
+                this.watchEmoteSet(id, set);
                 this.report('7TV ' + key, 'OK · ' + map.size + ' emotes');
                 this.changed();
             } catch (error) {
+                if (this.stopped) return;
                 if (id && error.status === 404) {
                     this.channelEmotes = new Map();
+                    this.watchEmoteSet(id, null);
                     this.changed();
                 }
                 this.report(
@@ -453,7 +630,9 @@
             if (!/^\d+$/.test(id) || id === this.channelId) {
                 return;
             }
+            if (this.channelId) this.emoteSets.delete(this.channelId);
             this.channelId = id;
+            this.connectEmoteEvents();
             this.channelBadges = {};
             this.channelEmotes.clear();
             if (this.config?.showBadges || this.subscriptionBadges) this.badges(id);
@@ -464,10 +643,30 @@
         start(config) {
             this.stopped = false;
             this.config = config;
+            this.connectEmoteEvents();
             if (config.showBadges || this.subscriptionBadges) this.badges();
             if (config.showSevenTVEmotes) {
                 this.emotes();
             }
+            // A tab can predate the user's first 7TV set. There is no set ID
+            // to subscribe to yet, so discover it without waiting ten minutes.
+            this.emoteDiscovery = setInterval(async () => {
+                const id = this.channelId;
+                if (
+                    this.stopped ||
+                    !config.showSevenTVEmotes ||
+                    !id ||
+                    this.emoteSets.has(id) ||
+                    this.discoveringEmotes
+                )
+                    return;
+                this.discoveringEmotes = true;
+                try {
+                    await this.emotes(id);
+                } finally {
+                    this.discoveringEmotes = false;
+                }
+            }, 15000);
             this.refresh = setInterval(() => {
                 if (config.showSevenTVEmotes) {
                     this.emotes();
@@ -492,6 +691,13 @@
             this.stopped = true;
             clearInterval(this.refresh);
             clearInterval(this.badgeRefresh);
+            clearInterval(this.emoteDiscovery);
+            this.emoteEventSource?.close();
+            this.emoteEventSource = null;
+            clearTimeout(this.emoteEventRetry);
+            clearTimeout(this.emoteHeartbeat);
+            for (const job of this.liveEmoteJobs.values()) clearTimeout(job.timer);
+            this.liveEmoteJobs.clear();
             for (const job of this.sourceQueue) {
                 job.source.pending = null;
                 job.resolve(null);

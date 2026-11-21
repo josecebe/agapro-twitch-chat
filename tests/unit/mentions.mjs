@@ -1625,4 +1625,37 @@ test('Twemoji survives refresh and restores the original emoji if its image fail
     renderer.body(action, 'saluda 🫪', '');
     assert.equal(action.querySelectorAll('.twemoji')[0].alt, '🫪');
 });
+test('Offscreen messages remain available up to maxMessages when newer messages are removed', () => {
+    for (const layout of ['stack-bottom', 'stack-top']) {
+        const renderer = firstMessageRenderer({ maxMessages: 3, layout });
+        if (layout === 'stack-top')
+            renderer.root.prepend = (node) => {
+                node.parent = renderer.root;
+                renderer.root.children.unshift(node);
+            };
+        renderer.root.getBoundingClientRect = () => ({ top: 0, bottom: 100 });
+        for (let index = 0; index < 4; index++) {
+            renderer.add(firstMessage('history-' + index));
+            renderer.rows.at(-1).row.getBoundingClientRect = () => ({ top: -200, bottom: -100 });
+        }
+        renderer.fit();
+        assert.equal(renderer.rows.length, 3);
+        assert.equal(renderer.root.children.length, 3);
+        assert.deepEqual(
+            renderer.rows.map((record) => record.t.id),
+            ['history-1', 'history-2', 'history-3']
+        );
+        renderer.moderate({
+            command: 'CLEARMSG',
+            tags: { 'target-msg-id': 'history-3' },
+            params: ['#test']
+        });
+        assert.deepEqual(
+            renderer.rows.map((record) => record.t.id),
+            ['history-1', 'history-2']
+        );
+        assert.equal(renderer.root.children.length, 2);
+        assert.ok(renderer.root.children.includes(renderer.rows[0].row));
+    }
+});
 console.log(`${count} tests PASS`);

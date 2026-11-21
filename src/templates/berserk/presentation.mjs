@@ -19,7 +19,7 @@ export default function createPresentation(config) {
             const count = node.querySelectorAll('.emote-stack').length;
             const onlyEmotes =
                 count > 0 &&
-                !node.textContent.trim() &&
+                !node.textContent.replace(/\p{Default_Ignorable_Code_Point}/gu, '').trim() &&
                 !node.querySelector('.chat-gif') &&
                 !node.querySelector('.twemoji');
             node.style.setProperty(

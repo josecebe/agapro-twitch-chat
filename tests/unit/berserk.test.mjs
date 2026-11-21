@@ -6,10 +6,50 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import prepareBerserkAssets from '../../src/templates/berserk/prepare.cjs';
 import createBerserkPresentation from '../../src/templates/berserk/presentation.mjs';
+import createBubblePresentation from '../../src/templates/bubble-chat/presentation.mjs';
 import { readTemplates, compileTemplates } from '../../scripts/templates.mjs';
 import { compileStyles } from '../../scripts/styles.mjs';
 
 const { prepareBubbles: prepareBerserkBubbles } = prepareBerserkAssets;
+
+test('Invisible duplicate-message markers do not disable enlarged emotes in Berserk or Bubble Chat', () => {
+    for (const [template, createPresentation] of [
+        ['berserk', createBerserkPresentation],
+        ['bubble', createBubblePresentation]
+    ]) {
+        const theme = createPresentation({
+            settings: { singleEmoteScale: 4, multipleEmoteScale: 2 }
+        });
+        for (const text of ['', ' ', ' \u034f', '\u200b\u200c\u200d\ufeff', 'hello', '\u0301']) {
+            for (const count of [1, 2]) {
+                const values = new Map();
+                const row = {
+                    dataset: { berserkBubble: '1', berserkBubbleOrientation: 'normal' },
+                    style: { getPropertyValue: () => '0%' },
+                    classList: { toggle() {} },
+                    querySelector: () => null
+                };
+                const body = {
+                    textContent: text,
+                    querySelectorAll: () => Array(count).fill({}),
+                    querySelector: (selector) =>
+                        selector === '.berserk-bubble-background' ? {} : null,
+                    style: { setProperty: (key, value) => values.set(key, value) },
+                    classList: { toggle() {}, contains: () => false },
+                    closest: () => row
+                };
+                const result = theme.styleBody(body);
+                const visible = text === 'hello' || text === '\u0301';
+                assert.equal(
+                    values.get(`--${template}-emote-scale`),
+                    String(visible ? 1 : count === 1 ? 4 : 2)
+                );
+                assert.equal(result.prefer2xEmotes, !visible && count === 1);
+                assert.equal(body.textContent, text);
+            }
+        }
+    }
+});
 
 test('Berserk prepares all PNG assets and recalculates cap dimensions when artwork changes', async () => {
     const parent = fileURLToPath(new URL('../artifacts/', import.meta.url));
