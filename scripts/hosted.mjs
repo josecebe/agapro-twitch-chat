@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFile, readdir, rm } from 'node:fs/promises';
+import { readFile, readdir, rm, rmdir } from 'node:fs/promises';
 import path from 'node:path';
 import { transform } from 'esbuild';
 
@@ -25,9 +25,17 @@ export async function pruneHostedFiles(outdir, files) {
             }
         }
     }
+    // Retire the old duplicate export without deleting unrelated files.
+    const legacyDirectory = path.join(path.resolve(outdir), 'streamelements-hosted');
+    for (const name of ['index.html', 'style.css', 'index.js', 'fields.json', 'data.json']) {
+        await rm(path.join(legacyDirectory, name), { force: true });
+    }
+    await rmdir(legacyDirectory).catch((error) => {
+        if (!['ENOENT', 'ENOTEMPTY'].includes(error.code)) throw error;
+    });
 }
 
-export async function hostedFiles({ css, js, tabs, baseURL = defaultHostedBaseURL }) {
+export async function hostedFiles({ css, js, config, baseURL = defaultHostedBaseURL }) {
     const url = new URL(baseURL);
     if (url.protocol !== 'https:') throw Error('Hosted base URL must use HTTPS');
     if (!url.pathname.endsWith('/')) url.pathname += '/';
@@ -51,34 +59,42 @@ export async function hostedFiles({ css, js, tabs, baseURL = defaultHostedBaseUR
             return 'url("' + name + '")';
         }
     );
-    const runtime = js + '\nwindow.dispatchEvent(new Event("agapro:runtime-ready"));';
     const cssName = 'widget.' + hash(externalCSS) + '.css';
-    const jsName = 'widget.' + hash(runtime) + '.js';
+    const jsName = 'widget.' + hash(js) + '.js';
     files['web/' + cssName] = externalCSS;
-    files['web/' + jsName] = runtime;
+    files['web/' + jsName] = js;
     files['web/manifest.json'] = JSON.stringify({ css: cssName, js: jsName }) + '\n';
     files['web/.nojekyll'] = '';
     files['web/index.html'] =
-        '<!doctype html><meta charset="utf-8"><title>Agapro chat assets</title><p>Agapro chat: hosted StreamElements resources.</p>';
+        '<!doctype html><meta charset="utf-8"><title>Agapro chat assets</title><p>Agapro chat: hosted StreamElements and Streamlabs resources.</p>';
     const loaderSource = await readFile(
-        new URL('../src/streamelements-loader.js', import.meta.url),
+        new URL('../src/hosted-loader.js', import.meta.url),
         'utf8'
     );
-    const loader = (
-        await transform(loaderSource, {
-            loader: 'js',
-            minify: true,
-            target: 'chrome100',
-            define: { AGAPRO_HOSTED_BASE_URL: JSON.stringify(url.href) }
-        })
-    ).code;
-    for (const [name, value] of Object.entries(tabs)) {
-        files['streamelements-hosted/' + name] =
-            name === 'index.js'
-                ? loader
-                : name === 'style.css'
-                  ? 'html,body{margin:0;background:transparent!important}#diagnostics[hidden]{display:none!important}'
-                  : value;
+    const bootstrapCSS =
+        'html,body{margin:0;background:transparent!important}#diagnostics[hidden]{display:none!important}';
+    for (const platform of ['streamelements', 'streamlabs']) {
+        const loader = (
+            await transform(loaderSource, {
+                loader: 'js',
+                minify: true,
+                target: 'chrome100',
+                define: {
+                    AGAPRO_HOSTED_BASE_URL: JSON.stringify(url.href),
+                    AGAPRO_HOSTED_PLATFORM: JSON.stringify(platform),
+                    AGAPRO_HOSTED_CONFIG: platform === 'streamlabs' ? 'config' : 'undefined'
+                }
+            })
+        ).code;
+        files[platform + '/style.css'] = bootstrapCSS;
+        files[platform + '/index.js'] =
+            platform === 'streamlabs'
+                ? '(function () {\n// Edit your Twitch channels and appearance here.\nconst config = ' +
+                  JSON.stringify(config, null, 4) +
+                  ';\n' +
+                  loader +
+                  '\n})();\n'
+                : loader;
     }
     return files;
 }

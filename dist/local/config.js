@@ -5,7 +5,7 @@ window.CHAT_WIDGET_CONFIG = {
     sources: [
         {
             provider: 'twitch',
-            channel: 'elxokas'
+            channel: 'auronplay'
         }
     ],
 
@@ -57,8 +57,6 @@ window.CHAT_WIDGET_CONFIG = {
     // Emotes and GIFs
     showTwitchEmotes: true,
     showSevenTVEmotes: true,
-    // Download resolution (1–4); displayed size is controlled by emoteSizePx.
-    sevenTVEmoteScale: 2,
     emoteSizePx: 34,
     showCheers: true,
     showTwitchGifs: true,

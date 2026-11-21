@@ -163,8 +163,7 @@ function boot(sources, failChannel = '', options = {}) {
     vm.runInContext(providers, context);
     const a = context.window.ChatWidget;
     class Assets {
-        constructor(report, fetcher, emoteScale) {
-            this.emoteScale = emoteScale;
+        constructor() {
             this.listeners = new Set();
             this.stops = 0;
         }
@@ -313,26 +312,6 @@ test('Empty source arrays report configuration errors without opening connection
     assert.equal(empty.panel.hidden, false);
 });
 empty.listeners.get('pagehide')();
-
-test('7TV resolution defaults to 1x and reaches every source catalog', () => {
-    for (const [value, expected] of [
-        [undefined, 1],
-        ['4', 4],
-        [3, 3],
-        [9, 4],
-        [0, 1],
-        ['invalid', 1]
-    ]) {
-        for (const sources of [[], entries]) {
-            const app = boot(sources, '', { sevenTVEmoteScale: value });
-            assert.equal(app.runtime.config.sevenTVEmoteScale, expected);
-            assert.equal(app.runtime.assets.emoteScale, expected);
-            for (const source of app.runtime.sources)
-                assert.equal(source.assets.emoteScale, expected);
-            app.listeners.get('pagehide')();
-        }
-    }
-});
 
 test('Chat width defaults to 525 pixels and normalizes configured bounds', () => {
     for (const [value, expected] of [

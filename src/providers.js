@@ -108,10 +108,9 @@
         return sets;
     };
     ChatWidget.Assets = class {
-        constructor(report, fetcher = ChatWidget.fetchJSON, emoteScale = 1) {
+        constructor(report, fetcher = ChatWidget.fetchJSON) {
             this.report = report;
             this.fetcher = fetcher;
-            this.emoteScale = Math.round(ChatWidget.clamp(emoteScale, 1, 4, 1));
             this.sourceChannels = new Map();
             this.sourceQueue = [];
             this.activeSources = 0;
@@ -153,6 +152,16 @@
                     ? this.sourceChannels.get(roomId)?.badges
                     : this.channelBadges;
             return sets?.[set]?.versions?.[version] || this.globalBadges[set]?.versions?.[version];
+        }
+        enableSubscriptionBadges(roomId) {
+            if (!this.subscriptionBadges) {
+                this.subscriptionBadges = true;
+                if (!this.config?.showBadges) {
+                    this.badges();
+                    if (this.channelId) this.badges(this.channelId);
+                }
+            }
+            if (roomId && roomId !== this.channelId) this.ensureSource(roomId);
         }
         emote(name, roomId = this.channelId) {
             const map =
@@ -205,7 +214,9 @@
             if (source.pending) {
                 return source.pending;
             }
-            const badges = this.config?.showBadges !== false && now >= source.badgesDue;
+            const badges =
+                (this.config?.showBadges !== false || this.subscriptionBadges) &&
+                now >= source.badgesDue;
             const emotes = this.config?.showSevenTVEmotes !== false && now >= source.emotesDue;
             if (!badges && !emotes) {
                 return Promise.resolve(source);
@@ -314,20 +325,22 @@
                 }
                 const size = (file) =>
                     Number.isFinite(file.size) && file.size > 0 ? file.size : Infinity;
-                const preferred = (file) =>
-                    file.name.startsWith(this.emoteScale + 'x.') &&
-                    /\.(webp|avif)$/.test(file.name);
                 const formatRank = (file) =>
                     ['webp', 'avif', 'gif'].indexOf(file.name.split('.')[1]);
-                const file = files
+                const candidates = files
                     .filter((candidate) => /^[1-4]x\.(webp|avif|gif)$/.test(candidate.name))
                     .sort(
                         (a, b) =>
-                            Number(preferred(b)) - Number(preferred(a)) ||
                             size(a) - size(b) ||
                             formatRank(a) - formatRank(b) ||
                             a.name.localeCompare(b.name)
-                    )[0];
+                    );
+                const preferred = (scale) =>
+                    candidates.find(
+                        (file) =>
+                            file.name.startsWith(scale + 'x.') && /\.(webp|avif)$/.test(file.name)
+                    ) || candidates.find((file) => file.name.startsWith(scale + 'x.'));
+                const file = preferred(1) || candidates[0];
                 if (!file) {
                     continue;
                 }
@@ -338,9 +351,18 @@
                 if (!src) {
                     continue;
                 }
+                const double = preferred(2);
                 map.set(emote.name, {
                     id: emote.id,
                     src,
+                    ...(double
+                        ? {
+                              src2x: ChatWidget.safeURL(emoteData.host.url + '/' + double.name, [
+                                  'cdn.7tv.app',
+                                  'cdn.7tv.io'
+                              ])
+                          }
+                        : {}),
                     animated: !!emoteData.animated,
                     zeroWidth: !!(Number(emoteData.flags) & 256),
                     ratio: ChatWidget.clamp(file.width / file.height, 0.1, 12, 1),
@@ -434,9 +456,7 @@
             this.channelId = id;
             this.channelBadges = {};
             this.channelEmotes.clear();
-            if (this.config?.showBadges) {
-                this.badges(id);
-            }
+            if (this.config?.showBadges || this.subscriptionBadges) this.badges(id);
             if (this.config?.showSevenTVEmotes) {
                 this.emotes(id);
             }
@@ -444,9 +464,7 @@
         start(config) {
             this.stopped = false;
             this.config = config;
-            if (config.showBadges) {
-                this.badges();
-            }
+            if (config.showBadges || this.subscriptionBadges) this.badges();
             if (config.showSevenTVEmotes) {
                 this.emotes();
             }
@@ -464,11 +482,9 @@
                 }
             }, 600000);
             this.badgeRefresh = setInterval(() => {
-                if (config.showBadges) {
+                if (config.showBadges || this.subscriptionBadges) {
                     this.badges();
-                    if (this.channelId) {
-                        this.badges(this.channelId);
-                    }
+                    if (this.channelId) this.badges(this.channelId);
                 }
             }, 2700000);
         }

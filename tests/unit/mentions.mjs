@@ -44,8 +44,10 @@ class Node {
             this.parent.children.splice(i, 1);
         }
     }
-    replaceChildren() {
+    replaceChildren(...nodes) {
+        this.text = null;
         this.children = [];
+        this.append(...nodes);
     }
     set textContent(text) {
         this.text = text;
@@ -1219,5 +1221,93 @@ test('Disabled GIF images use a label even when link labels are disabled', () =>
     renderer.body(node, '[GIF]', '', '', '', 'twitch', '', '0-4|demo|https://evil.org/demo.gif');
     assert.equal(node.textContent, '[GIF]');
     assert.equal(node.querySelectorAll('.gif-label').length, 0);
+});
+test('Subscription notices use the subscriber identity and preserve emotes and headings on refresh', () => {
+    const renderer = firstMessageRenderer({ showTwitchEmotes: true });
+    const notice = firstMessage('subscription', {
+        login: 'alice',
+        'display-name': 'Alice',
+        'msg-id': 'resub',
+        'msg-param-cumulative-months': '12',
+        'msg-param-sub-plan': 'Prime',
+        emotes: '25:0-4'
+    });
+    notice.command = 'USERNOTICE';
+    notice.prefix = 'tmi.twitch.tv';
+    notice.params = ['#test', 'Kappa hola'];
+    renderer.add(notice);
+    const record = renderer.rows[0];
+    assert.equal(record.login, 'alice');
+    assert.equal(record.row.classList.contains('subscription-no-message'), false);
+    assert.ok(record.row.classList.contains('highlighted-message'));
+    assert.equal(
+        record.row.querySelectorAll('.subscription-context')[0].textContent,
+        '12-month subscription with Prime!'
+    );
+    assert.equal(record.body.querySelectorAll('.emote')[0].alt, 'Kappa');
+    renderer.refresh();
+    assert.equal(record.row.querySelectorAll('.subscription-context').length, 1);
+    assert.equal(record.body.querySelectorAll('.emote')[0].alt, 'Kappa');
+});
+
+test('Subscriptions without messages show a heading without rendering the channel as text', () => {
+    const renderer = firstMessageRenderer();
+    const notice = firstMessage('subscription-empty', {
+        login: 'alice',
+        'msg-id': 'sub',
+        'msg-param-sub-plan': '1000'
+    });
+    notice.command = 'USERNOTICE';
+    notice.prefix = 'tmi.twitch.tv';
+    notice.params = ['#test'];
+    renderer.add(notice);
+    assert.equal(renderer.rows[0].body.textContent, '');
+    assert.ok(renderer.rows[0].row.classList.contains('subscription-no-message'));
+    assert.equal(
+        renderer.rows[0].row.querySelectorAll('.subscription-context')[0].textContent,
+        'New subscription with Tier 1!'
+    );
+    renderer.add({ ...notice, tags: { ...notice.tags, id: 'raid', 'msg-id': 'raid' } });
+    assert.equal(renderer.rows.length, 1);
+});
+test('Subscription icons use Prime or the exact channel badge, refresh late assets and reject unsafe URLs', () => {
+    for (const plan of ['Prime', '1000', '2000', '3000']) {
+        const renderer = firstMessageRenderer({ showBadges: false });
+        let loaded = false;
+        const lookups = [];
+        renderer.assets.badge = (set, version, room) => {
+            lookups.push([set, version, room]);
+            return loaded
+                ? {
+                      image_url_4x: 'https://static-cdn.jtvnw.net/badges/v1/example/3',
+                      title: 'Subscriber'
+                  }
+                : null;
+        };
+        const notice = firstMessage('icon-' + plan, {
+            login: 'alice',
+            'msg-id': 'resub',
+            'msg-param-sub-plan': plan,
+            'msg-param-cumulative-months': '12',
+            badges: 'subscriber/2012',
+            'room-id': '42'
+        });
+        notice.command = 'USERNOTICE';
+        renderer.add(notice);
+        const label = renderer.rows[0].row._subscriptionLabel;
+        assert.equal(label.querySelectorAll('.subscription-icon').length, 0);
+        loaded = true;
+        renderer.refresh();
+        assert.equal(label.querySelectorAll('.subscription-icon').length, 1);
+        assert.equal(lookups.at(-1)[0], plan === 'Prime' ? 'premium' : 'subscriber');
+        assert.equal(lookups.at(-1)[1], plan === 'Prime' ? '1' : '2012');
+        if (plan !== 'Prime') assert.equal(lookups.at(-1)[2], '42');
+        renderer.refresh();
+        assert.equal(label.querySelectorAll('.subscription-icon').length, 1);
+        renderer.assets.badge = () => ({ image_url_4x: 'https://evil.org/icon.png' });
+        renderer.refresh();
+        assert.equal(label.querySelectorAll('.subscription-icon').length, 0);
+        assert.ok(label.textContent.includes(plan === 'Prime' ? 'Prime' : 'Tier'));
+    }
 });
 console.log(`${count} tests PASS`);

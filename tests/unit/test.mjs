@@ -378,9 +378,9 @@ test('7TV aliases, animation and zero-width behavior follow the source flags', (
     assert.equal(m.has('Original'), false);
     assert.equal(m.get('Alias').ratio, 2);
 });
-test('7TV selects the configured 1x–4x WebP/AVIF resolution with size-based fallbacks', () => {
-    const select = (files, scale = 1) =>
-        new A.Assets(() => {}, undefined, scale)
+test('7TV prefers the smallest 1x WebP/AVIF and retains a separate 2x variant', () => {
+    const select = (files) =>
+        new A.Assets(() => {})
             .normalize(
                 {
                     emotes: [
@@ -408,18 +408,38 @@ test('7TV selects the configured 1x–4x WebP/AVIF resolution with size-based fa
         { name: '1x.png', size: 1 }
     ];
     const base = 'https://cdn.7tv.app/emote/id/';
-    for (const scale of [1, 2, 3, 4]) {
-        const files = [1, 2, 3, 4].flatMap((n) => [
-            { name: n + 'x.webp', size: n * 200, width: n * 64, height: n * 32 },
-            { name: n + 'x.avif', size: n * 100, width: n * 64, height: n * 32 }
-        ]);
-        assert.equal(select(files, scale).src, base + scale + 'x.avif');
-        assert.equal(select(files, String(scale)).ratio, 2);
-        assert.equal(select(files, String(scale)).src, base + scale + 'x.avif');
-    }
-    assert.equal(select(variants, 3).src, base + '2x.gif');
     const emote = select(variants);
     assert.equal(emote.src, base + '1x.avif');
+    assert.equal(emote.src2x, base + '2x.webp');
+    assert.equal(
+        select([
+            { name: '1x.webp', size: 100 },
+            { name: '1x.gif', size: 1 }
+        ]).src,
+        base + '1x.webp'
+    );
+    assert.equal(
+        select([
+            { name: '1x.gif', size: 100 },
+            { name: '4x.avif', size: 1 }
+        ]).src,
+        base + '1x.gif'
+    );
+    assert.equal(select([{ name: '1x.webp' }, { name: '4x.webp' }]).src2x, undefined);
+    assert.equal(
+        select([{ name: '1x.webp' }, { name: '2x.webp', size: 100 }, { name: '2x.avif', size: 50 }])
+            .src2x,
+        base + '2x.avif'
+    );
+    assert.equal(
+        select([{ name: '1x.webp' }, { name: '2x.webp', size: 50 }, { name: '2x.avif', size: 100 }])
+            .src2x,
+        base + '2x.webp'
+    );
+    assert.equal(
+        select([{ name: '1x.webp' }, { name: '2x.gif', size: 50 }]).src2x,
+        base + '2x.gif'
+    );
     assert.equal(emote.animated, true);
     assert.equal(emote.zeroWidth, true);
     assert.equal(emote.ratio, 2);

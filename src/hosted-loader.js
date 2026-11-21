@@ -5,7 +5,8 @@
         latestLoad = event.detail;
     };
     // StreamElements can dispatch its settings while the hosted files load.
-    window.addEventListener('onWidgetLoad', capture);
+    if (AGAPRO_HOSTED_PLATFORM === 'streamelements')
+        window.addEventListener('onWidgetLoad', capture);
     const detach = () => {
         window.removeEventListener('onWidgetLoad', capture);
         window.removeEventListener('agapro:runtime-ready', ready);
@@ -28,7 +29,13 @@
             if (tag === 'link') {
                 node.rel = 'stylesheet';
                 node.href = url;
-            } else node.src = url;
+            } else {
+                node.src = url;
+                if (AGAPRO_HOSTED_PLATFORM === 'streamlabs') {
+                    node.dataset.chatPlatform = 'streamlabs';
+                    node.dataset.chatConfig = JSON.stringify(AGAPRO_HOSTED_CONFIG);
+                }
+            }
             document.head.append(node);
         });
     (async () => {

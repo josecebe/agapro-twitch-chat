@@ -42,7 +42,6 @@ const specifications = {
     textShadow: ['Text shadow', 'Typography'],
     showTwitchEmotes: ['Show Twitch emotes', 'Emotes and GIFs'],
     showSevenTVEmotes: ['Show 7TV emotes, including Shared Chat', 'Emotes and GIFs'],
-    sevenTVEmoteScale: ['7TV emote resolution (1x–4x)', 'Emotes and GIFs', 1, 4],
     emoteSizePx: ['Emote size', 'Emotes and GIFs', 16, 160],
     showCheers: ['Show Cheers/Bits', 'Emotes and GIFs'],
     showTwitchGifs: ['Show Twitch GIFs', 'Emotes and GIFs'],

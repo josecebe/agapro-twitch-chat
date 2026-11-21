@@ -4,6 +4,8 @@
     .message {
         // Notice backgrounds span the chat even when ordinary rows align right.
         &.first-message,
+        &.cheer-message,
+        &.subscription-message,
         &.highlighted-message,
         &.channel-points-redemption {
             width: 100%;
@@ -39,7 +41,8 @@
             }
         }
     }
-    .message.highlighted-message {
+    .message.highlighted-message,
+    .message.cheer-message {
         padding: var(--classic-box-padding);
         border-inline-start: var(--classic-box-border-width) solid
             var(--classic-first-message-border);

@@ -213,6 +213,34 @@
                 })
             },
             { message: message('cheer', 'PixelFox', t('demoCheer'), { bits: '50' }) },
+            ...[
+                ['subscription-new', '', { 'msg-id': 'sub', 'msg-param-sub-plan': '1000' }],
+                [
+                    'subscription-resub',
+                    'Kappa ' + t('demoReply'),
+                    {
+                        'msg-id': 'resub',
+                        'msg-param-cumulative-months': '12',
+                        'msg-param-sub-plan': 'Prime',
+                        emotes: '25:0-4'
+                    }
+                ],
+                [
+                    'subscription-silent',
+                    '',
+                    {
+                        'msg-id': 'resub',
+                        'msg-param-cumulative-months': '6',
+                        'msg-param-sub-plan': '2000'
+                    }
+                ]
+            ].map(([key, text, tags]) => {
+                const notice = message(key, 'Nova', text, tags);
+                notice.command = 'USERNOTICE';
+                notice.tags.login = notice.prefix.split('!')[0];
+                notice.prefix = 'tmi.twitch.tv';
+                return { message: notice };
+            }),
             { message: message('action', 'Nova', '\u0001ACTION ' + t('demoAction') + '\u0001') },
             { message: message('long', 'Alice', t('demoWrapping')) },
             { message: message('moderated', 'Nova', t('demoModerated')) },

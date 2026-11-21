@@ -86,7 +86,7 @@ test('Berserk avoids consecutive bases, covers all flips and keeps choices on re
                         background = element;
                     },
                     style: style(),
-                    classList: { toggle() {} },
+                    classList: { toggle() {}, contains: () => false },
                     closest: () => row,
                     ownerDocument: {
                         getElementById: () => chat,

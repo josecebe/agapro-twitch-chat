@@ -22,7 +22,7 @@ side, 128 at the top and 99 at the bottom. SVGs of other sizes scale these cuts
 proportionally. The master SVG is authoritative; edit it rather than its cuts.
 A folder with four manually prepared pieces and no master SVG is also supported.
 
-Local and self-contained exports embed the assets; hosted StreamElements exports
+The local export embeds the assets; StreamElements and Streamlabs exports
 publish the images separately. `_bubble.scss`, `_sword.scss` and
 `_texture.scss` are generated intermediates, ignored by Git. Preparation writes
 only changed files so watch mode does not loop.
@@ -56,10 +56,16 @@ controls the texture and its shadow together. Text, emotes and the sword remain
 opaque. **Background color** applies to solid-background templates and does not
 tint this texture.
 
-Highlighted messages overlay the shared animated color gradient on the same
+Highlighted messages and messages with Bits overlay the shared animated color gradient on the same
 texture and mask. Only the gradient moves; the native texture crop stays fixed.
 First-message background color takes priority when both notices apply, and
 reduced motion keeps the highlight static.
+
+Subscriptions, Bits, highlighted messages and channel-point rewards
+add a 50% animated color overlay masked to the sword
+artwork, with badges and nickname above the tint. The subscription's warm-white heading sits inside
+the blood panel. Notices without a viewer message use equal top and bottom
+padding and no trailing heading gap. Reduced motion keeps the sword tint static.
 
 `--berserk-shape-shadow` supplies the same single shadow for the complete sword
 and the complete bubble. The bubble has one decorative outer layer to let the

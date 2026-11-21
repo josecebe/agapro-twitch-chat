@@ -257,8 +257,14 @@ try {
 
     const tabs = path.join(outputDirectory, 'streamelements') + path.sep;
     const html = await readFile(tabs + 'index.html', 'utf8');
-    const css = await readFile(tabs + 'style.css', 'utf8');
-    const js = await readFile(tabs + 'index.js', 'utf8');
+    const localDocument = await readFile(path.join(outputDirectory, 'local/index.html'), 'utf8');
+    const css =
+        localDocument.match(/<style>([\s\S]*?)<\/style>/)[1] +
+        ':root{color-scheme:normal}#diagnostics[hidden]{display:none!important}';
+    const manifest = JSON.parse(
+        await readFile(path.join(outputDirectory, 'web/manifest.json'), 'utf8')
+    );
+    const js = await readFile(path.join(outputDirectory, 'web', manifest.js), 'utf8');
     const data = JSON.parse(await readFile(tabs + 'data.json', 'utf8'));
     previewDirectory = await mkdtemp(path.join(os.tmpdir(), 'chat-se-preview-'));
     const preview = path.join(previewDirectory, 'index.html');

@@ -116,29 +116,15 @@ export async function buildProject({
         library,
         'namespace.ChatWidget.start(window.CHAT_WIDGET_CONFIG || {});'
     );
-    const adapter = isolate(
-        await readFile(path.join(projectRoot, 'src/streamelements.js'), 'utf8'),
-        'streamelements'
+    const adapters = await Promise.all(
+        ['streamelements', 'streamlabs', 'hosted'].map(async (name) =>
+            isolate(await readFile(path.join(projectRoot, 'src', name + '.js'), 'utf8'), name)
+        )
     );
-    const streamElementsJS = await javascript(
-        library + '\n' + adapter,
-        `namespace.ChatWidget.attachStreamElements(${configLiteral});`
+    const hostedJS = await javascript(
+        library + '\n' + adapters.join('\n'),
+        `namespace.ChatWidget.attachHosted(${configLiteral});`
     );
-    const streamlabsAdapter = isolate(
-        await readFile(path.join(projectRoot, 'src/streamlabs.js'), 'utf8'),
-        'streamlabs'
-    );
-    // Keep the complete configuration readable and editable in the JS tab.
-    // Streamlabs uses its own events and settings format, not onWidgetLoad.
-    const streamlabsJS =
-        '(function () {\n// Edit your Twitch channels and appearance here.\nconst config = ' +
-        JSON.stringify(config, null, 4) +
-        ';\n' +
-        (await javascript(
-            library + '\n' + streamlabsAdapter,
-            'namespace.ChatWidget.attachStreamlabs(config);'
-        )) +
-        '\n})();\n';
     const styles = compileStyles({ templates });
     if (developmentCSS) {
         await writeStyles(styles);
@@ -179,9 +165,6 @@ export async function buildProject({
             ),
             htmlOptions
         ),
-        // A dark color scheme can give transparent iframes an opaque canvas.
-        'style.css': css + ':root{color-scheme:normal}#diagnostics[hidden]{display:none!important}',
-        'index.js': streamElementsJS,
         'fields.json': JSON.stringify(fields, null, 4) + '\n',
         'data.json': JSON.stringify(data, null, 4) + '\n'
     };
@@ -206,16 +189,15 @@ export async function buildProject({
                 '<div id="diagnostics" hidden role="status"></div>'
             ),
             htmlOptions
-        ),
-        'streamlabs/style.css': tabs['style.css'],
-        'streamlabs/index.js': streamlabsJS
+        )
     };
     Object.assign(
         files,
         await hostedFiles({
-            css: tabs['style.css'],
-            js: streamElementsJS,
-            tabs,
+            // A dark color scheme can give transparent iframes an opaque canvas.
+            css: css + ':root{color-scheme:normal}#diagnostics[hidden]{display:none!important}',
+            js: hostedJS,
+            config,
             baseURL: hostedBaseURL
         })
     );
@@ -232,7 +214,8 @@ export async function buildProject({
                     )
                     .concat(
                         'src/streamelements.js',
-                        'src/streamelements-loader.js',
+                        'src/hosted-loader.js',
+                        'src/hosted.js',
                         'src/streamlabs.js',
                         'config.js',
                         'index.html'

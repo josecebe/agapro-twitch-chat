@@ -73,6 +73,10 @@
         }
         applyPaint(node, css) {
             css = css || node._basePaint || null;
+            if (node._paintTarget) {
+                this.applyPaint(node._paintTarget, css);
+                return;
+            }
             if (node._chatPaint === css) {
                 return;
             }
@@ -625,12 +629,12 @@
                 emotes: this.shiftEmotes(emotes, -Array.from(prefix[0]).length)
             };
         }
-        image(src, alt, className, ratio) {
+        image(src, alt, className, ratio, deferSource = false) {
             const img = document.createElement('img');
             img.className = className;
             img.alt = alt;
             img.title = alt;
-            img.src = src;
+            if (!deferSource) img.src = src;
             img.referrerPolicy = 'no-referrer';
             img.decoding = 'async';
             if (ratio) {
@@ -666,6 +670,40 @@
             const icon = this.image(info.favicon, info.name, 'provider-icon');
             icon.title = info.name + ' (' + info.domain + ')';
             return icon;
+        }
+        subscriptionIcon(label, tags, sourceId = '') {
+            if (!label) return;
+            label.replaceChildren(document.createTextNode(label._subscriptionText));
+            const assets = this.assetsFor('twitch', sourceId);
+            const prime = tags['msg-param-sub-plan'] === 'Prime';
+            const sourceRoom = tags['source-room-id'];
+            const badgeTags =
+                sourceRoom && typeof tags['source-badges'] === 'string'
+                    ? tags['source-badges']
+                    : tags.badges || '';
+            // Use Twitch's exact subscriber version: tier flair is part of its artwork.
+            const version = badgeTags
+                .split(',')
+                .map((token) => token.split('/'))
+                .find(([set]) => set === 'subscriber')?.[1];
+            const badge = prime
+                ? assets?.badge?.('premium', '1')
+                : version
+                  ? assets?.badge?.(
+                        'subscriber',
+                        version,
+                        sourceRoom || tags['room-id'] || assets?.channelId
+                    )
+                  : null;
+            const src = ChatWidget.safeURL(
+                badge?.image_url_4x || badge?.image_url_2x || badge?.image_url_1x,
+                ['static-cdn.jtvnw.net']
+            );
+            if (src) {
+                const icon = this.image(src, '', 'subscription-icon');
+                icon.title = prime ? 'Prime Gaming' : badge.title || '';
+                label.replaceChildren(icon, document.createTextNode(label._subscriptionText));
+            }
         }
         badges(node, tags, sevenTVBadge = null, provider = 'twitch', sourceId = '') {
             node.replaceChildren();
@@ -724,6 +762,7 @@
             sourceId = '',
             gifs = ''
         ) {
+            const previousPaint = node._paintTarget?._chatPaint;
             node.replaceChildren();
             let base = null;
             let spaces = '';
@@ -741,16 +780,22 @@
                     spaces = '';
                 }
             };
+            const pendingEmotes = [];
+            const emoteImage = (info, alt, className) => {
+                const image = this.image(info.src, alt, className, info.ratio, !!info.src2x);
+                if (info.src2x) pendingEmotes.push({ image, info });
+                return image;
+            };
             const emote = (info, alt) => {
                 if (info.zeroWidth && base) {
                     spaces = '';
-                    base.append(this.image(info.src, alt, 'emote overlay', info.ratio));
+                    base.append(emoteImage(info, alt, 'emote overlay'));
                     return;
                 }
                 flush();
                 const stack = document.createElement('span');
                 stack.className = 'emote-stack';
-                stack.append(this.image(info.src, alt, 'emote', info.ratio));
+                stack.append(emoteImage(info, alt, 'emote'));
                 node.append(stack);
                 base = stack;
             };
@@ -829,7 +874,15 @@
                 }
             }
             flush();
-            ChatWidget.templates.get(this.config.template).styleBody?.(node, this.config);
+            const presentation = ChatWidget.templates
+                .get(this.config.template)
+                .styleBody?.(node, this.config);
+            node._paintTarget = presentation?.paintTarget || null;
+            if (node._paintTarget) this.applyPaint(node._paintTarget, previousPaint);
+            // Pick before assigning src so enlarged emotes never download both sizes.
+            for (const { image, info } of pendingEmotes) {
+                image.src = presentation?.prefer2xEmotes ? info.src2x : info.src;
+            }
         }
         add(message) {
             if (message.provider && message.provider !== 'twitch') {
@@ -839,13 +892,19 @@
             const theme = ChatWidget.templates.get(this.config.template);
             const sourceId = message.sourceId || '';
             const tags = message.tags;
-            const login = message.prefix.split('!')[0].toLowerCase();
+            const subscription = message.command === 'USERNOTICE';
+            if (subscription && !['sub', 'resub'].includes(tags['msg-id'])) return;
+            const login = (
+                subscription
+                    ? tags.login || tags['display-name'] || ''
+                    : message.prefix.split('!')[0]
+            ).toLowerCase();
             const id = tags.id ? ChatWidget.scopeKey(provider, sourceId, tags.id) : '';
             const source = tags['source-id']
                 ? ChatWidget.providerKey(provider, tags['source-id'])
                 : id;
             const now = Date.now();
-            const rawText = message.params[message.params.length - 1] || '';
+            const rawText = message.params[1] || '';
             if (ChatWidget.hideMessage(this.config, login, rawText)) {
                 return;
             }
@@ -878,6 +937,7 @@
             }
             const assets = this.assetsFor(provider, sourceId);
             const sourceRoom = ChatWidget.sourceRoom(tags, assets?.channelId);
+            if (subscription) assets?.enableSubscriptionBadges?.(sourceRoom);
             if (id) {
                 this.replyMedia ||= new Map();
                 this.replyMedia.set(id, {
@@ -896,7 +956,20 @@
             }
             const row = document.createElement('div');
             row.className = 'message';
-            if (tags['msg-id'] === 'highlighted-message') {
+            if (
+                provider === 'twitch' &&
+                /^[1-9]\d*$/.test(String(tags.bits)) &&
+                Number.isSafeInteger(Number(tags.bits))
+            ) {
+                row.classList.add('cheer-message');
+            }
+            if (
+                subscription ||
+                tags['msg-id'] === 'highlighted-message' ||
+                (provider === 'twitch' &&
+                    typeof tags['custom-reward-id'] === 'string' &&
+                    tags['custom-reward-id'].trim() !== '')
+            ) {
                 row.classList.add('highlighted-message');
             }
             const badges = document.createElement('span');
@@ -905,6 +978,29 @@
             const body = document.createElement('span');
             name.className = 'name';
             body.className = 'body';
+            if (subscription) {
+                row.classList.add('subscription-message');
+                if (!rawText.trim()) row.classList.add('subscription-no-message');
+                const label = document.createElement('div');
+                label.className = 'first-message-label subscription-context';
+                const months = Number(tags['msg-param-cumulative-months']);
+                const plan = { Prime: 'Prime', 1000: 'Tier 1', 2000: 'Tier 2', 3000: 'Tier 3' }[
+                    tags['msg-param-sub-plan']
+                ];
+                const heading =
+                    tags['msg-id'] === 'sub'
+                        ? 'subscriptionNew'
+                        : Number.isSafeInteger(months) && months > 0
+                          ? months === 1
+                              ? 'subscriptionMonth'
+                              : 'subscriptionMonths'
+                          : 'subscriptionRenewed';
+                label.textContent = this.t(heading + (plan ? 'Plan' : ''), { months, plan });
+                label._subscriptionText = label.textContent;
+                row._subscriptionLabel = label;
+                this.subscriptionIcon(label, tags, sourceId);
+                row.append(label);
+            }
             body._chatChannel = String(message.params[0] || '')
                 .replace(/^#/, '')
                 .toLowerCase();
@@ -915,7 +1011,7 @@
             }
             name.dir = 'auto';
             body.dir = 'auto';
-            let text = message.params[message.params.length - 1] || '';
+            let text = rawText;
             let emotes = tags.emotes || '';
             let gifs = tags.gifs || '';
             if (text.startsWith('\x01ACTION ') && text.endsWith('\x01')) {
@@ -1150,6 +1246,7 @@
                     record.provider,
                     record.sourceId
                 );
+                this.subscriptionIcon(record.row?._subscriptionLabel, record.t, record.sourceId);
                 this.body(
                     record.body,
                     record.text,

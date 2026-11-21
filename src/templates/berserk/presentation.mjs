@@ -17,7 +17,8 @@ export default function createPresentation(config) {
                 node.prepend(background);
             }
             const count = node.querySelectorAll('.emote-stack').length;
-            const onlyEmotes = count > 0 && !node.textContent.trim();
+            const onlyEmotes =
+                count > 0 && !node.textContent.trim() && !node.querySelector('.chat-gif');
             node.style.setProperty(
                 '--berserk-emote-scale',
                 String(
@@ -73,6 +74,22 @@ export default function createPresentation(config) {
                 row.style.setProperty('--berserk-texture-x', `${Math.random() * 100}%`);
                 row.style.setProperty('--berserk-texture-y', `${Math.random() * 100}%`);
             }
+            // Paint action text independently of the decorative pool and notice.
+            let paintTarget;
+            if (node.classList.contains('action-body')) {
+                paintTarget = node.ownerDocument.createElement('span');
+                paintTarget.className = 'berserk-action-text';
+                for (const child of Array.from(node.childNodes)) {
+                    if (
+                        child !== label &&
+                        !child.classList?.contains('berserk-bubble-background')
+                    ) {
+                        paintTarget.append(child);
+                    }
+                }
+                node.append(paintTarget);
+            }
+            return { prefer2xEmotes: onlyEmotes && count === 1, paintTarget };
         },
         // White lettering stays readable and paints never replace the sword artwork.
         paintAuthor(node) {

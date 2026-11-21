@@ -14,7 +14,6 @@
             sources: normalized.sources,
             maxMessages: Math.round(ChatWidget.clamp(input.maxMessages, 1, 200, 35)),
             chatMaxWidthPx: Math.round(ChatWidget.clamp(input.chatMaxWidthPx, 160, 10000, 525)),
-            sevenTVEmoteScale: Math.round(ChatWidget.clamp(input.sevenTVEmoteScale, 1, 4, 1)),
             messageLifetimeSeconds: ChatWidget.clamp(input.messageLifetimeSeconds, 0, 86400),
             botLogins: (input.botLogins || []).map((botLogin) => String(botLogin).toLowerCase())
         };
@@ -187,13 +186,10 @@
             ...source,
             assets: new ChatWidget.Assets(
                 (key, value) => report(source.id + ' · ' + key, value),
-                fetchAssets,
-                config.sevenTVEmoteScale
+                fetchAssets
             )
         }));
-        const assets =
-            sources[0]?.assets ||
-            new ChatWidget.Assets(report, fetchAssets, config.sevenTVEmoteScale);
+        const assets = sources[0]?.assets || new ChatWidget.Assets(report, fetchAssets);
         const paints = new ChatWidget.Paints(report);
         const renderer = new ChatWidget.Renderer(root, config, assets, paints);
         const connections = [];
@@ -245,7 +241,11 @@
                         provider: source.provider,
                         sourceId: source.id
                     };
-                    if (message.command === 'PRIVMSG') {
+                    if (
+                        message.command === 'PRIVMSG' ||
+                        (message.command === 'USERNOTICE' &&
+                            ['sub', 'resub'].includes(message.tags['msg-id']))
+                    ) {
                         scopedReport('last message', 'Received');
                         renderer.add(message);
                     } else {

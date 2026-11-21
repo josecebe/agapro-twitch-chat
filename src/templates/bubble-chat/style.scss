@@ -90,8 +90,15 @@
 
         &.first-message,
         &.channel-points-redemption,
+        &.cheer-message,
+        &.subscription-message,
         &.highlighted-message {
             width: 100%;
+
+            &::before,
+            .body {
+                width: calc(100cqw - 2 * var(--bubble-body-margin));
+            }
         }
 
         // Replies sit above the name pill, outside the bubble background.
@@ -127,7 +134,8 @@
             filter: var(--bubble-name-filter, none);
         }
 
-        &.highlighted-message::before {
+        &.highlighted-message::before,
+        &.cheer-message::before {
             @include highlight.background;
             animation: highlight-gradient 5s linear infinite;
         }
@@ -245,7 +253,6 @@
 
     .action .body {
         font-family: var(--text-font-family);
-        font-style: italic;
     }
 
     .action .emote {
@@ -254,7 +261,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #chat[data-template='bubble-chat'] .message.highlighted-message::before {
+    #chat[data-template='bubble-chat'] .message.highlighted-message::before,
+    #chat[data-template='bubble-chat'] .message.cheer-message::before {
         animation: none;
     }
 }

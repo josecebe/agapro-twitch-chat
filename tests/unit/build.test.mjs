@@ -1,7 +1,7 @@
 import { readWidgetScripts } from '../helpers/widget-scripts.mjs';
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, writeFile, mkdtemp, readdir, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, readdir, rm, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import vm from 'node:vm';
@@ -26,6 +26,8 @@ after(async () => {
     }
 });
 const result = await buildProject({ outputDirectory: outdir });
+const webManifest = JSON.parse(await readFile(path.join(outdir, 'web/manifest.json'), 'utf8'));
+const sharedRuntime = await readFile(path.join(outdir, 'web', webManifest.js), 'utf8');
 
 test('local build embeds the application and loads a separate readable config', async () => {
     assert.equal(defaults.language, 'en');
@@ -100,12 +102,8 @@ test('StreamElements produces five tabs with separate background color and opaci
     assert.equal(fields.chatAlignment.options.right, 'Right');
     assert.equal(data.chatAlignment, 'left');
     assert.equal(configure({ fieldData: { chatAlignment: 'right' } }).chatAlignment, 'right');
-    assert.equal(fields.sevenTVEmoteScale.type, 'number');
-    assert.equal(fields.sevenTVEmoteScale.min, 1);
-    assert.equal(fields.sevenTVEmoteScale.max, 4);
-    assert.equal(fields.sevenTVEmoteScale.step, 1);
-    assert.equal(data.sevenTVEmoteScale, 1);
-    assert.equal(configure({ fieldData: { sevenTVEmoteScale: '4' } }).sevenTVEmoteScale, 4);
+    assert.equal(fields.sevenTVEmoteScale, undefined);
+    assert.equal(data.sevenTVEmoteScale, undefined);
     assert.equal(configure({ fieldData: { chatMaxWidthPx: '640' } }).chatMaxWidthPx, 640);
     assert.equal(fields.moderationAnimation.options.blood, 'Blood burst');
     assert.equal(
@@ -178,16 +176,21 @@ test('Streamlabs produces three tabs and boots independently of StreamElements e
     const listeners = new Map();
     const sandbox = vm.createContext({
         document: {
+            currentScript: {
+                dataset: { chatPlatform: 'streamlabs', chatConfig: JSON.stringify(defaults) }
+            },
             readyState: 'loading',
             addEventListener: (name, callback) => listeners.set(name, callback)
         },
-        window: {}
+        window: { dispatchEvent: () => {} },
+        Event: class {}
     });
-    vm.runInContext(js, sandbox);
+    vm.runInContext(sharedRuntime, sandbox);
     assert.equal(typeof listeners.get('DOMContentLoaded'), 'function');
     assert.equal(sandbox.window.ChatWidget, undefined);
     assert.equal(sandbox.window.CHAT_WIDGET_RUNTIME, undefined);
-    assert.doesNotMatch(js, /onWidgetLoad|onEventReceived/);
+    assert.ok(Buffer.byteLength(js) < 12000);
+    assert.equal(sandbox.document.currentScript.dataset.chatConfig, undefined);
 });
 
 test('compiled namespace is encapsulated and StreamElements waits for onWidgetLoad', async () => {
@@ -195,10 +198,12 @@ test('compiled namespace is encapsulated and StreamElements waits for onWidgetLo
     const sandbox = vm.createContext({
         document: { getElementById: () => null },
         window: {
-            addEventListener: (name, callback) => listeners.set(name, callback)
-        }
+            addEventListener: (name, callback) => listeners.set(name, callback),
+            dispatchEvent: () => {}
+        },
+        Event: class {}
     });
-    vm.runInContext(await readFile(path.join(outdir, 'streamelements/index.js'), 'utf8'), sandbox);
+    vm.runInContext(sharedRuntime, sandbox);
     assert.equal(sandbox.window.ChatWidget, undefined);
     assert.equal(sandbox.window.CHAT_WIDGET_RUNTIME, undefined);
     assert.equal(typeof listeners.get('onWidgetLoad'), 'function');
@@ -370,20 +375,13 @@ test('hosted StreamElements tabs stay small and publish hashed standalone resour
         const bytes = await readFile(path.join(outdir, 'web/assets', name));
         assert.ok(name.startsWith(createHash('sha256').update(bytes).digest('hex').slice(0, 20)));
     }
-    const loader = await readFile(path.join(outdir, 'streamelements-hosted/index.js'), 'utf8');
+    const loader = await readFile(path.join(outdir, 'streamelements/index.js'), 'utf8');
     assert.ok(Buffer.byteLength(loader) < 3000);
     assert.match(loader, /https:\/\/josecebe.github.io\/agapro-twitch-chat\//);
     assert.match(loader, /no-store/);
     assert.match(loader, /onWidgetLoad/);
-    assert.ok((await readFile(path.join(outdir, 'streamelements-hosted/style.css'))).length < 300);
-    assert.deepEqual(
-        await readFile(path.join(outdir, 'streamelements-hosted/fields.json')),
-        await readFile(path.join(outdir, 'streamelements/fields.json'))
-    );
-    assert.deepEqual(
-        await readFile(path.join(outdir, 'streamelements-hosted/data.json')),
-        await readFile(path.join(outdir, 'streamelements/data.json'))
-    );
+    assert.ok((await readFile(path.join(outdir, 'streamelements/style.css'))).length < 300);
+    await assert.rejects(readdir(path.join(outdir, 'streamelements-hosted')), { code: 'ENOENT' });
 });
 
 test('rebuilds remove obsolete hosted artifacts while preserving unrelated files', async () => {
@@ -397,7 +395,14 @@ test('rebuilds remove obsolete hosted artifacts while preserving unrelated files
     ];
     for (const file of stale) await writeFile(path.join(directory, file), 'obsolete');
     await writeFile(path.join(directory, 'web/notes.txt'), 'keep');
+    await mkdir(path.join(directory, 'streamelements-hosted'));
+    for (const name of ['index.html', 'index.js', 'style.css', 'fields.json', 'data.json']) {
+        await writeFile(path.join(directory, 'streamelements-hosted', name), 'obsolete');
+    }
     const rebuilt = await buildProject({ outputDirectory: directory });
+    await assert.rejects(readdir(path.join(directory, 'streamelements-hosted')), {
+        code: 'ENOENT'
+    });
     for (const file of stale)
         await assert.rejects(readFile(path.join(directory, file)), { code: 'ENOENT' });
     assert.equal(await readFile(path.join(directory, 'web/notes.txt'), 'utf8'), 'keep');

@@ -33,8 +33,12 @@ try {
         }
     });
     await browser.send('Fetch.enable', { patterns: [{ urlPattern: 'https://*' }] });
-    const css = await readFile(path.join(outputDirectory, 'streamelements/style.css'), 'utf8');
-    const script = await readFile(path.join(outputDirectory, 'streamelements/index.js'), 'utf8');
+    const localDocument = await readFile(path.join(outputDirectory, 'local/index.html'), 'utf8');
+    const css = localDocument.match(/<style>([\s\S]*?)<\/style>/)[1];
+    const manifest = JSON.parse(
+        await readFile(path.join(outputDirectory, 'web/manifest.json'), 'utf8')
+    );
+    const script = await readFile(path.join(outputDirectory, 'web', manifest.js), 'utf8');
     const data = JSON.parse(
         await readFile(path.join(outputDirectory, 'streamelements/data.json'), 'utf8')
     );
@@ -130,7 +134,7 @@ try {
         assert.equal(item.nameWeight, item.enabled ? '700' : '400');
         assert.equal(item.mentionWeight, item.enabled ? '700' : '400');
         assert.equal(item.color, 'rgba(20, 80, 160, 0.4)');
-        assert.equal(item.actionColor, item.color);
+        assert.equal(item.actionColor, 'rgb(145, 70, 255)');
         assert.equal(item.name, item.enabled ? 'テスト (japanuser)' : 'テスト');
         assert.equal(item.normalShadow === 'none', !item.enabled);
         assert.equal(item.paintedShadow === 'none', !item.enabled);

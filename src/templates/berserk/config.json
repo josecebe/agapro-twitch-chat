@@ -4,7 +4,7 @@
     "order": 20,
     "presentation": {
         "glyphSpacing": false,
-        "paintActionText": false
+        "paintActionText": true
     },
     "settings": {
         "nameColor": "#ffffff",

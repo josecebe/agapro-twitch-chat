@@ -59,8 +59,6 @@ window.CHAT_WIDGET_CONFIG = {
     // Emotes and GIFs
     showTwitchEmotes: true,
     showSevenTVEmotes: true,
-    // Download resolution (1–4); emoteSizePx controls the displayed size separately.
-    sevenTVEmoteScale: 1,
     emoteSizePx: 34,
     showCheers: true,
     showTwitchGifs: false,

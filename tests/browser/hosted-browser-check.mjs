@@ -9,13 +9,10 @@ const outputDirectory = await mkdtemp(path.join(os.tmpdir(), 'chat-widget-hosted
 let browser;
 try {
     await buildProject({ outputDirectory, hostedBaseURL: 'https://widget.test/' });
-    const loader = await readFile(
-        path.join(outputDirectory, 'streamelements-hosted/index.js'),
-        'utf8'
-    );
+    const loader = await readFile(path.join(outputDirectory, 'streamelements/index.js'), 'utf8');
     browser = await browserSession();
     const requests = [];
-    browser.on('Fetch.requestPaused', async ({ requestId, request }) => {
+    const serveResources = async ({ requestId, request }) => {
         const url = new URL(request.url);
         assert.equal(url.origin, 'https://widget.test');
         requests.push(url.pathname);
@@ -40,7 +37,8 @@ try {
             ],
             body: bytes.toString('base64')
         });
-    });
+    };
+    browser.on('Fetch.requestPaused', serveResources);
     await browser.send('Fetch.enable', { patterns: [{ urlPattern: 'https://*' }] });
     await browser.evaluate(`(() => {
         document.body.innerHTML='<main id="chat"></main><pre id="diagnostics"></pre>';
@@ -93,6 +91,52 @@ try {
     })()`);
     assert.match(hostedPaint, /data:image\/svg\+xml/);
     assert.match(hostedPaint, /#s/);
+    assert.deepEqual(browser.errors, []);
+
+    await browser.close();
+    browser = await browserSession();
+    browser.on('Fetch.requestPaused', serveResources);
+    await browser.send('Fetch.enable', { patterns: [{ urlPattern: 'https://*' }] });
+    const streamlabsLoader = (
+        await readFile(path.join(outputDirectory, 'streamlabs/index.js'), 'utf8')
+    ).replace(
+        /const config = [\s\S]*?;\n/,
+        'const config = ' +
+            JSON.stringify({
+                sources: [],
+                template: 'berserk',
+                messageGapPx: 29,
+                googleFont: '',
+                usernameGoogleFont: '',
+                textGoogleFont: ''
+            }) +
+            ';\n'
+    );
+    await browser.evaluate(`(() => {
+        document.body.innerHTML='<main id="chat"></main><div id="diagnostics" hidden></div>';
+        ${streamlabsLoader}
+    })()`);
+    const streamlabsDeadline = Date.now() + 15000;
+    while (!(await browser.evaluate('!!window.CHAT_WIDGET_RUNTIME'))) {
+        if (Date.now() > streamlabsDeadline)
+            throw Error('Streamlabs hosted widget failed to start');
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    const streamlabsResult = await browser.evaluate(`(() => {
+        const runtime=CHAT_WIDGET_RUNTIME;
+        window.dispatchEvent(new CustomEvent('onWidgetLoad',{detail:{fieldData:{template:'classic'}}}));
+        return {template:runtime.config.template,gap:runtime.config.messageGapPx,maxWidth:runtime.config.chatMaxWidthPx,
+            unchanged:runtime===CHAT_WIDGET_RUNTIME,sheet:!!document.querySelector('link[rel=stylesheet]').sheet,
+            configRemoved:!document.querySelector('script[data-chat-platform]').dataset.chatConfig};
+    })()`);
+    assert.deepEqual(streamlabsResult, {
+        template: 'berserk',
+        gap: 29,
+        maxWidth: 525,
+        unchanged: true,
+        sheet: true,
+        configRemoved: true
+    });
     assert.deepEqual(browser.errors, []);
 
     await browser.close();

@@ -30,7 +30,6 @@
     "textShadow": "true",
     "showTwitchEmotes": "true",
     "showSevenTVEmotes": "true",
-    "sevenTVEmoteScale": 1,
     "emoteSizePx": 34,
     "showCheers": "true",
     "showTwitchGifs": "false",

@@ -7,7 +7,8 @@ export default function createPresentation(config) {
         },
         styleBody(node) {
             const count = node.querySelectorAll('.emote-stack').length;
-            const onlyEmotes = count > 0 && !node.textContent.trim();
+            const onlyEmotes =
+                count > 0 && !node.textContent.trim() && !node.querySelector('.chat-gif');
             node.style.setProperty(
                 '--bubble-emote-scale',
                 String(
@@ -19,6 +20,7 @@ export default function createPresentation(config) {
                 )
             );
             node.classList.toggle('bubble-single-emote', onlyEmotes && count === 1);
+            return { prefer2xEmotes: onlyEmotes && count === 1 };
         },
         paintAuthor(node, css) {
             if (!node.classList.contains('name')) return;

@@ -20,6 +20,7 @@ The results are:
 - `dist/local/` for an OBS local browser source.
 - `dist/streamelements/` for a StreamElements Custom Widget.
 - `dist/streamlabs/` for a Streamlabs Custom Widget.
+- `dist/web/` for the shared hosted code and assets published to GitHub Pages.
 
 Node.js is only needed to build. Using the widget requires an Internet connection.
 
@@ -45,8 +46,6 @@ To show multiple channels, add another entry to `sources`. Set `enabled: false` 
 
 ## 3. Install in StreamElements
 
-### Hosted version (recommended for Berserk)
-
 This version keeps the editor tabs small and downloads the code, styles and images
 from this repository's GitHub Pages site. After the initial setup, pushing to
 `master` builds and publishes updates automatically. Reload the overlay after the
@@ -57,7 +56,7 @@ from this repository's GitHub Pages site. After the initial setup, pushing to
 2. Commit and push the changes, including `.github/workflows/pages.yml`, to `master`.
 3. Wait for **Actions / Publish StreamElements resources** to finish successfully.
    Check that `https://josecebe.github.io/agapro-twitch-chat/manifest.json` opens.
-4. Paste the five files from `dist/streamelements-hosted/` into the matching editor
+4. Paste the five files from `dist/streamelements/` into the matching editor
    tabs: `index.html` into HTML, `style.css` into CSS, `index.js` into JS,
    `fields.json` into Fields, and `data.json` into Data. If the widget already has
    customized Data, retain those values instead of replacing them with defaults.
@@ -72,29 +71,14 @@ The loader buffers StreamElements settings until the external code and CSS are r
 Set `HOSTED_BASE_URL` when building for another HTTPS location. The workflow reads
 the Pages URL automatically. New generated web assets do not need to be committed.
 
-### Self-contained version
-
-The full inline version remains available below; its embedded artwork can exceed
-StreamElements' editor size limits. Use the hosted version if saving fails.
-
-1. Add a **Custom Widget** to your overlay and open its editor.
-2. Copy the contents of each file into the matching tab:
-
-    | File in `dist/streamelements/` | Editor tab |
-    | ------------------------------ | ---------- |
-    | `index.html`                   | HTML       |
-    | `style.css`                    | CSS        |
-    | `index.js`                     | JS         |
-    | `fields.json`                  | Fields     |
-    | `data.json`                    | Data       |
-
-3. Open the widget settings. Under **Channels → Channel source**, select:
-    - **Associated overlay channel** to use the overlay's channel.
-    - **Custom channels** to enter one or more Twitch logins, separated by commas.
-4. Adjust the appearance and save the widget and overlay.
-5. Add the overlay URL as a **Browser** source in OBS.
+Under **Channels / Channel source**, choose **Associated overlay channel** or
+**Custom channels**. Add the saved overlay URL as a Browser source in OBS.
 
 ## 4. Install in Streamlabs
+
+Set up GitHub Pages as described above first. Both platforms download the same
+engine, styles and images; updates apply when the widget reloads after publishing.
+Existing StreamElements hosted loaders remain compatible.
 
 1. Open the [Streamlabs Custom Widget editor](https://streamlabs.com/dashboard#/widgets/customwidget).
 2. Open **Custom Code → Edit Custom Code** and copy each file into its matching tab:
@@ -132,7 +116,7 @@ You can adjust fonts, text/emote/badge sizes, colors, backgrounds, shadows, mess
 - **Language:** English is the default. Use `language: 'es'` for Spanish, or select **Language → Chat language** in StreamElements.
 - **Message spacing:** `messageGapPx` sets the space between messages; `replyGapPx` sets the space below reply headers. Use `0` for no additional gap.
 - **Chat alignment:** `chatAlignment: 'left'` (default) or `'right'` anchors the chat container to that side of the browser source. In StreamElements use **Messages / Chat alignment**. Bubble Chat and Berserk align headers, panels and message text to the chosen side; oversized names can extend beyond the chat width toward the opposite side. Berserk mirrors only the sword artwork on the right, keeping names and badges readable. Single-emote bubbles keep their centered emote.
-- **7TV emote resolution:** `sevenTVEmoteScale: 1` selects the download resolution, from 1x through 4x. In StreamElements, use **Emotes and GIFs / 7TV emote resolution (1x–4x)**. This applies to global, channel and Shared Chat emotes; `emoteSizePx` still controls their displayed size. The smallest WebP/AVIF at the selected resolution is preferred, with available variants as a fallback.
+- **7TV emote resolution:** normal messages and reply previews prefer the smallest 1x WebP/AVIF. A single enlarged emote in Bubble Chat or Berserk prefers the smallest 2x WebP/AVIF, falling back to the normal source when no 2x is available. This is automatic for global, channel and Shared Chat emotes; `emoteSizePx` still controls displayed size. The former `sevenTVEmoteScale` control is no longer used.
 - **Maximum chat width:** `chatMaxWidthPx: 525` caps the whole chat container in pixels, including its padding. In StreamElements, use **Messages / Maximum chat width (px)**. Messages wrap within this width, or the viewport width if smaller. Berserk swords and Bubble Chat name pills keep their natural width and may extend beyond the container; leave enough width in the OBS browser source to show them.
 - **Message lifetime:** `messageLifetimeSeconds: 0` keeps messages until they leave the display or are removed. Set a positive value to expire them after that many seconds.
 - **Line height:** `messageLineHeight` is a multiplier of the visible letter height of the message font (tallest ascender to lowest descender): `1` makes consecutive lines practically touch, `2` doubles that spacing, and so on up to `3`. Emotes and emoji taller than the text can overlap slightly at `1`.
@@ -141,7 +125,9 @@ You can adjust fonts, text/emote/badge sizes, colors, backgrounds, shadows, mess
 
 - **Nick gradients:** enable **Typography → Gradient for normal Twitch nick colors**, or set `usernameGradient: true`, to shade the normal nick color from a slightly lighter top through its original color in the middle to a darker bottom. Bubble Chat applies it to the name pill and keeps the letters white; Classic applies it to the nickname text. Mentions and the "reply to" user use the same gradient as plain text. Equipped 7TV paints take priority. Disabled by default.
 - **Mentions:** `colorMentions` applies nick colors and enabled 7TV paints to `@username` and to whole usernames written without `@` when the widget already knows the user. Matching ignores case; unknown bare names stay as ordinary text. Emotes take priority over name highlighting.
+- **Actions (`/me`):** action text uses the author's Twitch color and equipped 7TV paint when enabled in all templates. Berserk keeps text paints separate from the blood background and first-message notice.
 - **Highlighted messages:** Twitch highlighted messages use the same animated pastel gradient in all three templates. Classic displays it in a box with the same border and corners as first messages; Berserk overlays it on its blood texture and mask. Reduced-motion settings keep the gradient static.
+- **Subscriptions:** shared Twitch `sub` and `resub` chat notices show a subscription heading, cumulative months for resubs, and Prime or tier when provided, followed by the viewer's optional message and emotes. Headings show the official Prime Gaming crown or the exact channel subscriber badge sent by Twitch, including tier flair when present. These icons appear independently of username badge visibility and update when badge assets arrive; unavailable icons leave the text intact. All three templates highlight the background; Berserk keeps its sword and blood panel. Demo mode includes a new subscription and resubs with and without a message. Automatic renewals without a chat notice are not detected.
 - **GIFs:** `showTwitchGifs: true` displays images. With `false`, they appear as a `GIF` label.
 - **Fonts:** local font families must be installed on the OBS computer. Use the Google Font settings to load an online font instead.
 

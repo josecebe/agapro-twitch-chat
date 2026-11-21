@@ -37,6 +37,16 @@
                 // enter from the same screen direction.
                 scale: -1 1;
             }
+
+            &:is(
+                    .subscription-message,
+                    .cheer-message,
+                    .highlighted-message,
+                    .channel-points-redemption
+                )::before {
+                grid-area: header / provider / notice / end;
+                scale: -1 1;
+            }
         }
 
         .message-content > .provider-icon {
@@ -104,8 +114,14 @@
 
         &.first-message,
         &.channel-points-redemption,
+        &.cheer-message,
+        &.subscription-message,
         &.highlighted-message {
             width: 100%;
+
+            .body {
+                width: 100cqw;
+            }
         }
 
         &.first-message-background .berserk-bubble-background::before {
@@ -116,7 +132,8 @@
                 var(--berserk-texture-image);
         }
 
-        &.highlighted-message:not(.first-message-background) .berserk-bubble-background::before {
+        &.highlighted-message:not(.first-message-background) .berserk-bubble-background::before,
+        &.cheer-message:not(.first-message-background) .berserk-bubble-background::before {
             background-image: highlight.$gradient, var(--berserk-texture-image);
             background-size:
                 900% 900%,
@@ -171,6 +188,72 @@
             filter: var(--berserk-shape-shadow);
             z-index: 0;
             pointer-events: none;
+        }
+    }
+
+    .message:is(
+        .subscription-message,
+        .cheer-message,
+        .highlighted-message,
+        .channel-points-redemption
+    ) {
+        // Tint only the sword's opaque artwork, leaving its texture visible.
+        &::before {
+            content: '';
+            position: absolute;
+            grid-area: header / provider / notice / space;
+            inset: 0;
+            padding-inline: var(--berserk-tip-width) var(--berserk-hilt-width);
+            @include highlight.background;
+            opacity: 0.5;
+            mask-image: sword.$tip, sword.$hilt, sword.$blade;
+            mask-position:
+                left center,
+                right center,
+                center;
+            mask-size:
+                var(--berserk-tip-width) 100%,
+                var(--berserk-hilt-width) 100%,
+                calc(100% + 2px) 100%;
+            mask-origin: border-box, border-box, content-box;
+            mask-repeat: no-repeat;
+            mask-mode: alpha;
+            z-index: 1;
+            pointer-events: none;
+            animation: highlight-gradient 5s linear infinite;
+
+            @media (prefers-reduced-motion: reduce) {
+                animation: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .animated &.berserk-sword-animated::before {
+                animation:
+                    berserk-sword-tint-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards,
+                    highlight-gradient 5s linear infinite;
+            }
+        }
+    }
+
+    .message.subscription-message {
+        .subscription-context {
+            color: #fff5e6;
+            text-shadow:
+                0 1px 2px #000,
+                0 0 3px rgba(0, 0, 0, 0.8);
+            text-align: start;
+            font-size: 0.6em;
+            margin-bottom: var(--berserk-notice-gap);
+        }
+
+        &.subscription-no-message {
+            .body {
+                padding-block: var(--berserk-message-padding-top);
+            }
+            .subscription-context {
+                margin: 0;
+            }
         }
     }
 
@@ -339,7 +422,6 @@
 
     .action .body {
         font-family: var(--text-font-family);
-        font-style: italic;
     }
 
     .action .emote {
@@ -354,6 +436,17 @@
     }
     to {
         opacity: 1;
+        translate: 0 0;
+    }
+}
+
+@keyframes berserk-sword-tint-enter {
+    from {
+        opacity: 0;
+        translate: var(--berserk-sword-enter-offset, 28px) 0;
+    }
+    to {
+        opacity: 0.5;
         translate: 0 0;
     }
 }

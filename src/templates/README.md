@@ -40,7 +40,7 @@ Example config:
 The optional factory can implement:
 
 - `authorColor(row, color, { hasUserColor })`: decorate the author's shared row and return its text color. `hasUserColor` distinguishes a valid Twitch color from the shared fallback, even when their color values happen to match.
-- `styleBody(node, userConfig)`: decorate the shared message body after its content is rendered; `userConfig` contains the current widget settings.
+- `styleBody(node, userConfig)`: decorate the shared message body after its content is rendered; `userConfig` contains the current widget settings. Return `{ prefer2xEmotes: true }` to choose available 2x 7TV sources for an enlarged single-emote message, before the images start loading. An optional `paintTarget` child element receives text paints without affecting decorative backgrounds; paints are restored when the body is rebuilt.
 - `paintAuthor(node, paint)`: return `undefined` to use the common text-paint renderer, an empty string to handle clearing a paint, or a background string when the template renders the paint itself. Image failures are still handled by the shared renderer.
 
 Channels, filters, fonts, message limits, media settings and other user controls belong to the shared `config.js`. Template configs never merge into that object. Private template settings do not generate additional StreamElements control groups. No template registers chat connections, handles events or replaces the HTML structure.
