@@ -79,6 +79,7 @@ const config = {
         "minSimilarLines": 4
     },
     "demo": false,
+    "devPreserveOffscreenMessages": false,
     "debug": false
 };
 (function(a){"use strict";let o;const r=e=>{o=e.detail},s=()=>{window.removeEventListener("onWidgetLoad",r),window.removeEventListener("agapro:runtime-ready",i);const e=o;return o=null,e},i=()=>{const e=s();e&&window.dispatchEvent(new CustomEvent("onWidgetLoad",{detail:e}))};window.addEventListener("agapro:runtime-ready",i);const d=(e,t)=>new Promise((c,l)=>{const n=document.createElement(e);n.onload=c,n.onerror=()=>l(Error("Could not load "+t)),e==="link"?(n.rel="stylesheet",n.href=t):(n.src=t,n.dataset.chatPlatform="streamlabs",n.dataset.chatConfig=JSON.stringify(config)),document.head.append(n)});(async()=>{const e=await fetch(new URL("manifest.json",a),{cache:"no-store"});if(!e.ok)throw Error("Hosted widget is unavailable ("+e.status+")");const t=await e.json();await d("link",new URL(t.css,a).href),await d("script",new URL(t.js,a).href)})().catch(e=>{s();const t=document.getElementById("diagnostics");t&&(t.hidden=!1,t.textContent="Unable to load the hosted chat. "+e.message)})})("https://josecebe.github.io/agapro-twitch-chat/");

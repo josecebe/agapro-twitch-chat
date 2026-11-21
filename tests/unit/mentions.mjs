@@ -157,7 +157,8 @@ test('Mentions use case-insensitive user colors and preserve punctuation and Uni
     const node = new Node();
     r.appendText(node, '😀 Hola,(@ALICE)! y @bob.');
     r.root.append(node);
-    assert.equal(node.textContent, '😀 Hola,(@ALICE)! y @bob.');
+    assert.equal(node.textContent, ' Hola,(@ALICE)! y @bob.');
+    assert.equal(node.querySelectorAll('.twemoji')[0].alt, '😀');
     const mentions = node.querySelectorAll('.mention');
     assert.equal(mentions.length, 2);
     assert.equal(mentions[0].style.color, '#12ab34');
@@ -1309,5 +1310,319 @@ test('Subscription icons use Prime or the exact channel badge, refresh late asse
         assert.equal(label.querySelectorAll('.subscription-icon').length, 0);
         assert.ok(label.textContent.includes(plan === 'Prime' ? 'Prime' : 'Tier'));
     }
+});
+const giftMessage = (id, kind, tags = {}) => ({
+    ...firstMessage(id, {
+        login: 'alice',
+        'user-id': '10',
+        'room-id': '42',
+        'msg-id': kind,
+        'msg-param-sub-plan': '1000',
+        ...tags
+    }),
+    command: 'USERNOTICE',
+    prefix: 'tmi.twitch.tv',
+    params: ['#test']
+});
+test('Gift batches show one summary and suppress all individual recipient notices', () => {
+    const renderer = firstMessageRenderer();
+    const batch = giftMessage('batch', 'submysterygift', {
+        'msg-param-mass-gift-count': '20',
+        'msg-param-community-gift-id': 'batch-id'
+    });
+    renderer.add(batch);
+    renderer.add(batch);
+    for (let i = 0; i < 20; i++)
+        renderer.add(
+            giftMessage('recipient-' + i, 'subgift', {
+                'msg-param-community-gift-id': 'batch-id',
+                'msg-param-recipient-display-name': 'Recipient' + i
+            })
+        );
+    assert.equal(renderer.rows.length, 1);
+    const record = renderer.rows[0];
+    assert.equal(record.row._subscriptionLabel.textContent, 'Alice has gifted 20 subscriptions!');
+    assert.ok(record.row.classList.contains('highlighted-message'));
+    assert.ok(record.row.classList.contains('subscription-no-message'));
+    renderer.refresh();
+    assert.equal(record.row._subscriptionLabel.textContent, 'Alice has gifted 20 subscriptions!');
+    assert.equal(record.body.textContent, '');
+    renderer.add(giftMessage('independent', 'subgift', { 'msg-param-community-gift-id': '0' }));
+    assert.equal(renderer.rows.length, 2);
+    assert.equal(
+        renderer.rows[1].row._subscriptionLabel.textContent,
+        'Alice has gifted 1 subscription!'
+    );
+});
+test('Gift suppression handles recipients before their summary and missing batch identifiers', () => {
+    const renderer = firstMessageRenderer();
+    renderer.add(giftMessage('early', 'subgift', { 'msg-param-community-gift-id': 'early-batch' }));
+    assert.equal(renderer.rows.length, 0);
+    renderer.add(giftMessage('summary', 'submysterygift', { 'msg-param-mass-gift-count': '2' }));
+    renderer.add(
+        giftMessage('single-during-batch', 'subgift', { 'msg-param-community-gift-id': '0' })
+    );
+    renderer.add(giftMessage('recipient-1', 'subgift'));
+    renderer.add(giftMessage('recipient-2', 'subgift'));
+    assert.equal(renderer.rows.length, 2);
+    renderer.add(giftMessage('single-after-batch', 'subgift'));
+    assert.equal(renderer.rows.length, 3);
+});
+test('Gift suppression keeps donors and channels separate and supports anonymous summaries', () => {
+    const renderer = firstMessageRenderer();
+    renderer.add(giftMessage('batch', 'submysterygift', { 'msg-param-mass-gift-count': '20' }));
+    renderer.add(giftMessage('other-donor', 'subgift', { login: 'bob', 'user-id': '11' }));
+    renderer.add(giftMessage('other-room', 'subgift', { 'room-id': '43' }));
+    renderer.add({ ...giftMessage('other-source', 'subgift'), sourceId: 'second' });
+    renderer.add(
+        giftMessage('anonymous', 'anonsubmysterygift', { 'msg-param-mass-gift-count': '3' })
+    );
+    for (let i = 0; i < 3; i++) renderer.add(giftMessage('anon-recipient-' + i, 'anonsubgift'));
+    assert.equal(renderer.rows.length, 5);
+    assert.equal(
+        renderer.rows.at(-1).row._subscriptionLabel.textContent,
+        'Anonymous has gifted 3 subscriptions!'
+    );
+    renderer.add(giftMessage('invalid', 'submysterygift', { 'msg-param-mass-gift-count': '-1' }));
+    assert.equal(renderer.rows.length, 5);
+});
+test('Classic subscriptions without a message render one localized sentence without a duplicate nick', () => {
+    for (const [language, expected] of [
+        ['es', '¡Alice se ha suscrito durante 21 meses con Tier 1!'],
+        ['en', 'Alice has subscribed for 21 months with Tier 1!']
+    ]) {
+        const renderer = firstMessageRenderer({ template: 'classic', language });
+        const notice = firstMessage('classic-summary', {
+            login: 'alice',
+            color: '#abcdef',
+            'msg-id': 'resub',
+            'msg-param-cumulative-months': '21',
+            'msg-param-sub-plan': '1000'
+        });
+        notice.command = 'USERNOTICE';
+        notice.params = ['#test'];
+        renderer.add(notice);
+        const record = renderer.rows[0];
+        assert.ok(record.row.classList.contains('subscription-summary'));
+        assert.equal(record.row.textContent, expected);
+        assert.equal(record.row.querySelectorAll('.message-content').length, 0);
+        assert.equal(record.row.querySelectorAll('.name')[0], record.name);
+        assert.equal(record.name.style.color, '#abcdef');
+        const paint = { backgroundImage: 'linear-gradient(red, blue)', filter: '' };
+        renderer.applyPaint(record.name, paint);
+        renderer.refresh();
+        assert.equal(record.row.textContent, expected);
+        assert.equal(record.row.querySelectorAll('.name')[0], record.name);
+        assert.equal(record.name.style.backgroundImage, paint.backgroundImage);
+        assert.equal(record.name._chatPaint, paint);
+    }
+});
+test('Classic subscriptions with a viewer message keep the existing heading and nick separator', () => {
+    const renderer = firstMessageRenderer({ template: 'classic' });
+    const notice = firstMessage('classic-message', {
+        login: 'alice',
+        'msg-id': 'resub',
+        'msg-param-cumulative-months': '21',
+        'msg-param-sub-plan': '1000'
+    });
+    notice.command = 'USERNOTICE';
+    renderer.add(notice);
+    const record = renderer.rows[0];
+    assert.equal(record.row.classList.contains('subscription-summary'), false);
+    assert.equal(record.row._subscriptionLabel.textContent, '21-month subscription with Tier 1!');
+    assert.equal(record.row.querySelectorAll('.message-content').length, 1);
+    assert.ok(record.content.textContent.includes(': Hola @bob'));
+});
+test('Dev history follows new messages at the bottom and preserves the position while reading older messages', () => {
+    const renderer = firstMessageRenderer({ devPreserveOffscreenMessages: true, maxMessages: 1 });
+    Object.assign(renderer.root, { scrollHeight: 500, clientHeight: 100, scrollTop: 400 });
+    const append = renderer.root.append.bind(renderer.root);
+    renderer.root.append = (...nodes) => {
+        append(...nodes);
+        renderer.root.scrollHeight += 40;
+    };
+    renderer.add(firstMessage('follow-bottom'));
+    assert.equal(renderer.root.scrollTop, renderer.root.scrollHeight);
+    renderer.root.scrollTop = 100;
+    renderer.add(firstMessage('read-history'));
+    assert.equal(renderer.root.scrollTop, 100);
+    assert.equal(renderer.rows.length, 2);
+    renderer.config.devPreserveOffscreenMessages = false;
+    renderer.root.scrollTop = renderer.root.scrollHeight - renderer.root.clientHeight;
+    const position = renderer.root.scrollTop;
+    renderer.add(firstMessage('normal-mode'));
+    assert.equal(renderer.root.scrollTop, position);
+    assert.equal(renderer.rows.length, 1);
+});
+test('Dev history remains pinned through delayed layout changes until the user scrolls up', () => {
+    const listeners = new Map();
+    let resize;
+    let disconnected = false;
+    context.setInterval = () => 0;
+    context.ResizeObserver = class {
+        constructor(callback) {
+            resize = callback;
+        }
+        observe() {}
+        disconnect() {
+            disconnected = true;
+        }
+    };
+    const root = {
+        scrollHeight: 500,
+        clientHeight: 100,
+        scrollTop: 400,
+        addEventListener: (event, callback) => listeners.set(event, callback),
+        removeEventListener: (event) => listeners.delete(event)
+    };
+    const renderer = new A.Renderer(
+        root,
+        { devPreserveOffscreenMessages: true },
+        { listeners: new Set() },
+        {}
+    );
+    root.scrollHeight = 600;
+    resize();
+    assert.equal(root.scrollTop, 600);
+    root.scrollTop = 100;
+    listeners.get('scroll')();
+    root.scrollHeight = 700;
+    resize();
+    assert.equal(root.scrollTop, 100);
+    root.scrollTop = 600;
+    listeners.get('scroll')();
+    root.scrollHeight = 800;
+    resize();
+    assert.equal(root.scrollTop, 800);
+    renderer.stop();
+    assert.ok(disconnected);
+    assert.equal(listeners.size, 0);
+    delete context.ResizeObserver;
+    delete context.setInterval;
+});
+test('Gift summary donor names retain Twitch colors and receive late 7TV paints', () => {
+    for (const template of ['classic']) {
+        const renderer = firstMessageRenderer({ template, showSevenTVPaints: true });
+        let cosmeticsReady;
+        renderer.paints = {
+            getCosmetics: () => ({
+                then: (callback) => {
+                    cosmeticsReady = callback;
+                }
+            })
+        };
+        renderer.add(
+            giftMessage('styled-gift-' + template, 'subgift', {
+                color: '#abcdef',
+                'msg-param-community-gift-id': '0'
+            })
+        );
+        const record = renderer.rows[0];
+        const label = record.row._subscriptionLabel;
+        const donor = label.querySelectorAll('.subscription-gifter')[0];
+        assert.equal(donor.textContent, 'Alice');
+        assert.equal(donor.style.color, '#abcdef');
+        assert.ok(donor.classList.contains('mention'));
+        record.row.isConnected = true;
+        const paint = { backgroundImage: 'linear-gradient(red, blue)', filter: '' };
+        cosmeticsReady({ paint });
+        assert.equal(donor.style.backgroundImage, paint.backgroundImage);
+        renderer.refresh();
+        assert.equal(label.querySelectorAll('.subscription-gifter')[0], donor);
+        assert.equal(donor.style.backgroundImage, paint.backgroundImage);
+        assert.equal(label.textContent, 'Alice has gifted 1 subscription!');
+    }
+});
+test('7TV overlays combine with emoji bases in messages and reply previews, including compound emoji', () => {
+    const renderer = firstMessageRenderer({ showSevenTVEmotes: true });
+    renderer.assets.emote = (token) =>
+        ['aga0', 'overlay2'].includes(token)
+            ? { src: 'https://cdn.7tv.app/emote/overlay/1x.webp', ratio: 1, zeroWidth: true }
+            : null;
+    for (const preview of [false, true]) {
+        for (const [emoji, code] of [
+            ['🐹', '1f439'],
+            ['❤️', '2764'],
+            ['🇪🇸', '1f1ea-1f1f8'],
+            ['👩🏽‍💻', '1f469-1f3fd-200d-1f4bb'],
+            ['1️⃣', '31-20e3']
+        ]) {
+            const node = new Node();
+            if (preview) renderer.previewText(node, emoji + ' aga0 overlay2 fin', node);
+            else renderer.body(node, emoji + ' aga0 overlay2 fin', '');
+            const stacks = node.querySelectorAll('.emote-stack');
+            assert.equal(stacks.length, 1);
+            assert.equal(stacks[0].querySelectorAll('.overlay').length, 2);
+            const base = stacks[0].querySelectorAll('.emoji-base')[0];
+            assert.equal(base.alt, emoji);
+            assert.ok(base.src.endsWith('/' + code + '.svg'));
+            assert.equal(node.textContent, ' fin');
+        }
+    }
+});
+test('Emoji overlays preserve adjacent text, skip links and show ordinary emoji as Twemoji', () => {
+    const renderer = firstMessageRenderer({ showSevenTVEmotes: true });
+    renderer.assets.emote = (token) =>
+        token === 'aga0'
+            ? { src: 'https://cdn.7tv.app/emote/overlay/1x.webp', ratio: 1, zeroWidth: true }
+            : null;
+    const node = new Node();
+    renderer.body(node, 'hola🐹 aga0 final', '');
+    assert.equal(node.querySelectorAll('.emoji-emote-stack').length, 1);
+    assert.equal(node.textContent, 'hola final');
+    renderer.body(node, '🐹 texto aga0', '');
+    assert.equal(node.querySelectorAll('.emoji-base').length, 0);
+    assert.ok(node.textContent.includes(' texto'));
+    assert.equal(node.querySelectorAll('.twemoji')[0].alt, '🐹');
+    renderer.body(node, 'https://example.com/🐹 aga0', '');
+    assert.equal(node.querySelectorAll('.emoji-base').length, 0);
+    renderer.config.showSevenTVEmotes = false;
+    renderer.body(node, '🐹 aga0', '');
+    assert.equal(node.textContent, ' aga0');
+    assert.equal(node.querySelectorAll('.twemoji')[0].alt, '🐹');
+    assert.equal(node.querySelectorAll('.emote-stack').length, 0);
+});
+test('Ordinary emoji always use Twemoji, including unsupported system glyphs and compound sequences', () => {
+    const renderer = firstMessageRenderer({
+        showSevenTVEmotes: false,
+        showTwitchEmotes: false,
+        colorMentions: false
+    });
+    for (const preview of [false, true]) {
+        for (const [emoji, code] of [
+            ['🫪', '1faea'],
+            ['🐹', '1f439'],
+            ['❤️', '2764'],
+            ['🇪🇸', '1f1ea-1f1f8'],
+            ['👩🏽‍💻', '1f469-1f3fd-200d-1f4bb'],
+            ['1️⃣', '31-20e3']
+        ]) {
+            const node = new Node();
+            if (preview) renderer.previewText(node, 'Hola ' + emoji + '!', node);
+            else renderer.body(node, 'Hola ' + emoji + '!', '');
+            const image = node.querySelectorAll('.twemoji')[0];
+            assert.equal(image.alt, emoji);
+            assert.ok(image.src.endsWith('/' + code + '.svg'));
+            assert.equal(node.textContent, 'Hola !');
+            assert.equal(node.querySelectorAll('.emote-stack').length, 0);
+        }
+    }
+});
+test('Twemoji survives refresh and restores the original emoji if its image fails', () => {
+    const renderer = firstMessageRenderer();
+    const message = firstMessage('twemoji-refresh');
+    message.params[1] = 'Twitter 🫪';
+    renderer.add(message);
+    const record = renderer.rows[0];
+    assert.equal(record.body.querySelectorAll('.twemoji')[0].alt, '🫪');
+    renderer.refresh();
+    const image = record.body.querySelectorAll('.twemoji')[0];
+    assert.equal(image.alt, '🫪');
+    image.onerror();
+    assert.equal(record.body.textContent, 'Twitter 🫪');
+    const action = new Node();
+    action.className = 'action-body';
+    renderer.body(action, 'saluda 🫪', '');
+    assert.equal(action.querySelectorAll('.twemoji')[0].alt, '🫪');
 });
 console.log(`${count} tests PASS`);

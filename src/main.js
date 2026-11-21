@@ -54,6 +54,7 @@
         root.setAttribute?.('aria-label', t('liveChat'));
         root.replaceChildren?.();
         root.classList.toggle('top', config.layout === 'stack-top');
+        root.classList.toggle('dev-preserve-history', config.devPreserveOffscreenMessages === true);
         document.body.classList.toggle('animated', !!config.enableAnimations);
         document.documentElement.style.setProperty(
             '--username-weight',
@@ -76,6 +77,14 @@
         document.documentElement.style.setProperty(
             '--first-message-background',
             ChatWidget.resolveColor(config.firstMessageBackgroundColor, 'rgba(151,71,255,0.55)').css
+        );
+        document.documentElement.style.setProperty(
+            '--first-message-gradient',
+            ChatWidget.firstMessageGradient(config.firstMessageBackgroundColor)
+        );
+        document.documentElement.style.setProperty(
+            '--first-message-label-color',
+            ChatWidget.firstMessageLabelColor(config.firstMessageBackgroundColor)
         );
         const fonts = {
             general: config.fontFamily || 'Arial, sans-serif',
@@ -241,11 +250,7 @@
                         provider: source.provider,
                         sourceId: source.id
                     };
-                    if (
-                        message.command === 'PRIVMSG' ||
-                        (message.command === 'USERNOTICE' &&
-                            ['sub', 'resub'].includes(message.tags['msg-id']))
-                    ) {
+                    if (message.command === 'PRIVMSG' || message.command === 'USERNOTICE') {
                         scopedReport('last message', 'Received');
                         renderer.add(message);
                     } else {

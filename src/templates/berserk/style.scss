@@ -42,7 +42,8 @@
                     .subscription-message,
                     .cheer-message,
                     .highlighted-message,
-                    .channel-points-redemption
+                    .channel-points-redemption,
+                    .first-message-background
                 )::before {
                 grid-area: header / provider / notice / end;
                 scale: -1 1;
@@ -124,17 +125,20 @@
             }
         }
 
-        &.first-message-background .berserk-bubble-background::before {
-            // Keep the texture under the configured first-message color and
-            // composite both through the same blood mask and shadow.
-            background-image:
-                linear-gradient(var(--first-message-background), var(--first-message-background)),
-                var(--berserk-texture-image);
+        &.first-message-background {
+            --berserk-highlight-gradient: var(
+                --first-message-gradient,
+                linear-gradient(var(--first-message-background), var(--first-message-background))
+            );
         }
 
+        &.first-message-background .berserk-bubble-background::before,
         &.highlighted-message:not(.first-message-background) .berserk-bubble-background::before,
         &.cheer-message:not(.first-message-background) .berserk-bubble-background::before {
-            background-image: highlight.$gradient, var(--berserk-texture-image);
+            // Tint the blood without washing out its texture or changing text opacity.
+            background-image:
+                var(--berserk-highlight-gradient, #{highlight.gradient(0.5)}),
+                var(--berserk-texture-image);
             background-size:
                 900% 900%,
                 max(#{texture.$width}, 100%) max(#{texture.$height}, 100%);
@@ -195,7 +199,8 @@
         .subscription-message,
         .cheer-message,
         .highlighted-message,
-        .channel-points-redemption
+        .channel-points-redemption,
+        .first-message-background
     ) {
         // Tint only the sword's opaque artwork, leaving its texture visible.
         &::before {
@@ -205,7 +210,7 @@
             inset: 0;
             padding-inline: var(--berserk-tip-width) var(--berserk-hilt-width);
             @include highlight.background;
-            opacity: 0.5;
+            opacity: var(--berserk-sword-tint-opacity, 0.5);
             mask-image: sword.$tip, sword.$hilt, sword.$blade;
             mask-position:
                 left center,
@@ -232,6 +237,28 @@
                 animation:
                     berserk-sword-tint-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards,
                     highlight-gradient 5s linear infinite;
+            }
+        }
+
+        &.first-message-background {
+            // The configured color already includes the first-message opacity.
+            --berserk-sword-tint-opacity: 1;
+
+            &::before {
+                background: var(--berserk-highlight-gradient) 100% 100% / 900% 900%;
+                animation: highlight-gradient 5s linear infinite;
+
+                @media (prefers-reduced-motion: reduce) {
+                    animation: none;
+                }
+            }
+
+            @media (prefers-reduced-motion: no-preference) {
+                .animated &.berserk-sword-animated::before {
+                    animation:
+                        berserk-sword-tint-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards,
+                        highlight-gradient 5s linear infinite;
+                }
             }
         }
     }
@@ -446,7 +473,7 @@
         translate: var(--berserk-sword-enter-offset, 28px) 0;
     }
     to {
-        opacity: 0.5;
+        opacity: var(--berserk-sword-tint-opacity, 0.5);
         translate: 0 0;
     }
 }

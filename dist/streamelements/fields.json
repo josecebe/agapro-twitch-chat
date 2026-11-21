@@ -566,5 +566,15 @@
             "true": "Yes",
             "false": "No"
         }
+    },
+    "devPreserveOffscreenMessages": {
+        "label": "Dev: preserve offscreen messages",
+        "group": "Preview and diagnostics",
+        "value": "false",
+        "type": "dropdown",
+        "options": {
+            "true": "Yes",
+            "false": "No"
+        }
     }
 }

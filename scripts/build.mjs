@@ -69,7 +69,6 @@ const htmlOptions = {
 export async function buildProject({
     outputDirectory = path.join(projectRoot, 'dist'),
     developmentCSS = false,
-    preserveLocalConfig = false,
     hostedBaseURL = defaultHostedBaseURL
 } = {}) {
     const outdir = path.resolve(outputDirectory);
@@ -168,14 +167,7 @@ export async function buildProject({
         'fields.json': JSON.stringify(fields, null, 4) + '\n',
         'data.json': JSON.stringify(data, null, 4) + '\n'
     };
-    let localConfig = await readFile(path.join(projectRoot, 'config.js'), 'utf8');
-    if (preserveLocalConfig) {
-        try {
-            localConfig = await readFile(path.join(outdir, 'local/config.js'), 'utf8');
-        } catch (error) {
-            if (error.code !== 'ENOENT') throw error;
-        }
-    }
+    const localConfig = await readFile(path.join(projectRoot, 'config.js'), 'utf8');
     const files = {
         'local/index.html': localHTML,
         'local/config.js': localConfig,
@@ -257,7 +249,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     try {
         const { outdir, manifest } = await buildProject({
             developmentCSS: true,
-            preserveLocalConfig: true,
             hostedBaseURL: process.env.HOSTED_BASE_URL || defaultHostedBaseURL
         });
         for (const [name, info] of Object.entries(manifest.files)) {

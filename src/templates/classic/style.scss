@@ -28,10 +28,33 @@
             border-radius: var(--classic-box-radius);
         }
         &.first-message-background {
-            background-image: linear-gradient(
-                var(--first-message-background, rgba(151, 71, 255, 0.55)),
-                var(--first-message-background, rgba(151, 71, 255, 0.55))
+            background-image: var(
+                --first-message-gradient,
+                linear-gradient(var(--first-message-background), var(--first-message-background))
             );
+            background-size: 900% 900%;
+            background-position: 100% 100%;
+            animation: highlight-gradient 5s linear infinite;
+
+            .animated & {
+                animation:
+                    appear 0.22s ease-out both,
+                    highlight-gradient 5s linear infinite;
+            }
+
+            .animated &.leaving {
+                animation:
+                    disappear 0.22s ease-in both,
+                    highlight-gradient 5s linear infinite;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                &,
+                .animated &,
+                .animated &.leaving {
+                    animation: none;
+                }
+            }
         }
         &.action {
             .body {
@@ -72,5 +95,13 @@
                 }
             }
         }
+    }
+
+    .subscription-summary .subscription-context {
+        margin: 0;
+        font-family: var(--text-font-family, inherit);
+        font-size: 1em;
+        font-weight: 400;
+        line-height: 1.2;
     }
 }

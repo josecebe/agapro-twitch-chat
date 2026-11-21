@@ -5,37 +5,39 @@ window.CHAT_WIDGET_CONFIG = {
     sources: [
         {
             provider: 'twitch',
-            channel: 'auronplay'
+            channel: ''
         }
     ],
 
     // Language
     // English is the default; Spanish is available with language: 'es'.
-    language: 'es',
+    language: 'en',
 
     // Appearance
     // Select the visual template; chat behavior is shared.
-    template: 'berserk',
+    template: 'classic',
     messageBackground: false,
-    // Color and opacity are independent; opacity also controls the Berserk texture.
+    // Color and opacity are independent. Opacity also controls Berserk's texture.
     messageBackgroundColor: '#000000',
-    messageBackgroundOpacity: 0.8,
+    messageBackgroundOpacity: 0.7,
     enableAnimations: true,
+    // Berserk: slide the sword, badges and nickname in together.
     berserkSwordAnimation: true,
-    // Use "none" for immediate removal without particles.
-    moderationAnimation: 'blood',
+    // "blood" adds a blood burst on removal/expiry; "none" disables particles.
+    moderationAnimation: 'dust',
 
     // Messages
     // Also supports stack-top.
     layout: 'stack-bottom',
-    chatAlignment: 'leftr',
-    chatMaxWidthPx: 425,
+    chatAlignment: 'left', // 'left' or 'right'
+    // Maximum width of the whole chat, including padding; name headers may overflow.
+    chatMaxWidthPx: 525,
     maxMessages: 35,
     messageLifetimeSeconds: 0,
     messageGapPx: 10,
 
     // Typography
-    fontSizePx: 20,
+    fontSizePx: 25,
     messageLineHeight: 1.2,
     fontFamily: 'Aclonica',
     // Optional Google Fonts overrides; empty strings keep the corresponding local fonts.
@@ -59,7 +61,7 @@ window.CHAT_WIDGET_CONFIG = {
     showSevenTVEmotes: true,
     emoteSizePx: 34,
     showCheers: true,
-    showTwitchGifs: true,
+    showTwitchGifs: false,
     gifMaxHeightPx: 150,
 
     // Badges, icons and paints
@@ -67,9 +69,9 @@ window.CHAT_WIDGET_CONFIG = {
     showSevenTVBadges: true,
     // In Shared Chat, show the origin channel's avatar first among the badges.
     showSharedChatIcon: true,
-    badgeSizePx: 24,
+    badgeSizePx: 30,
     showProviderIcon: false,
-    providerIconSizePx: 24,
+    providerIconSizePx: 30,
     showSevenTVPaints: true,
 
     // Replies and notices
@@ -119,5 +121,8 @@ window.CHAT_WIDGET_CONFIG = {
 
     // Preview and diagnostics
     demo: false,
+    // Development: keep offscreen rows in the DOM for inspection.
+    // Also ignores maxMessages; messageLifetimeSeconds and moderation still apply.
+    devPreserveOffscreenMessages: false,
     debug: false
 };

@@ -1,6 +1,16 @@
 (function (ChatWidget) {
     'use strict';
 
+    const isEmoji = (text) =>
+        /[\p{Extended_Pictographic}\p{Regional_Indicator}\u20e3]/u.test(text) &&
+        !text.includes('\ufe0e');
+    const emojiURL = (emoji) => {
+        const code = Array.from(emoji.includes('\u200d') ? emoji : emoji.replace(/\ufe0f/g, ''))
+            .map((character) => character.codePointAt(0).toString(16))
+            .join('-');
+        return 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@17.0.2/assets/svg/' + code + '.svg';
+    };
+
     function usernameGradient(color) {
         const channels = color
             .slice(1)
@@ -42,6 +52,31 @@
             this.repaint = () => this.refresh();
             this.assetBindings = new Set([assets]);
             assets.listeners.add(this.repaint);
+            if (config.devPreserveOffscreenMessages === true && config.layout !== 'stack-top') {
+                this.historyPinned = root.scrollHeight - root.clientHeight - root.scrollTop <= 2;
+                this.historyScrollTop = root.scrollTop;
+                this.onHistoryScroll = () => {
+                    const top = root.scrollTop;
+                    if (root.scrollHeight - root.clientHeight - top <= 2) this.historyPinned = true;
+                    else if (top < this.historyScrollTop) this.historyPinned = false;
+                    this.historyScrollTop = top;
+                };
+                root.addEventListener('scroll', this.onHistoryScroll, { passive: true });
+                if (typeof ResizeObserver !== 'undefined') {
+                    this.historyResize = new ResizeObserver(() => this.followHistoryBottom());
+                    this.historyResize.observe(root);
+                }
+            }
+        }
+        followHistoryBottom() {
+            if (
+                this.config.devPreserveOffscreenMessages !== true ||
+                this.config.layout === 'stack-top' ||
+                !this.historyPinned
+            )
+                return;
+            this.root.scrollTop = this.root.scrollHeight;
+            this.historyScrollTop = this.root.scrollTop;
         }
         t(key, values) {
             return ChatWidget.i18n.translate(this.config.language, key, values);
@@ -261,9 +296,23 @@
             label.append(domain);
             return label;
         }
+        appendEmojiText(node, text) {
+            this.emojiSegments ||= new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+            let plain = '';
+            for (const { segment } of this.emojiSegments.segment(text)) {
+                if (!isEmoji(segment)) {
+                    plain += segment;
+                    continue;
+                }
+                if (plain) node.append(document.createTextNode(plain));
+                plain = '';
+                node.append(this.image(emojiURL(segment), segment, 'twemoji'));
+            }
+            if (plain) node.append(document.createTextNode(plain));
+        }
         appendMentions(node, text, provider = 'twitch', preview = false) {
             if (this.config.colorMentions === false || node.classList.contains('action-body')) {
-                node.append(document.createTextNode(text));
+                this.appendEmojiText(node, text);
                 return;
             }
             let cursor = 0;
@@ -283,7 +332,7 @@
                 }
                 const start = match.index + match[1].length;
                 if (start > cursor) {
-                    node.append(document.createTextNode(text.slice(cursor, start)));
+                    this.appendEmojiText(node, text.slice(cursor, start));
                 }
                 const span = document.createElement('span');
                 span.className = 'mention';
@@ -302,7 +351,7 @@
                 cursor = start + match[2].length;
             }
             if (cursor < text.length) {
-                node.append(document.createTextNode(text.slice(cursor)));
+                this.appendEmojiText(node, text.slice(cursor));
             }
         }
         replyTarget(tags, provider) {
@@ -424,7 +473,8 @@
                 !quote._previewParts.some(
                     (part) =>
                         part.classList.contains('link-label') ||
-                        part.classList.contains('emote-stack')
+                        part.classList.contains('emote-stack') ||
+                        part.classList.contains('twemoji')
                 )
             )
                 return;
@@ -434,6 +484,30 @@
             ellipsis.hidden = true;
             quote._previewEllipsis = ellipsis;
             quote.append(ellipsis);
+        }
+        emojiOverlayBase(node, text, next, assets, roomId, provider = 'twitch', preview = false) {
+            if (
+                provider !== 'twitch' ||
+                !next ||
+                !this.config.showSevenTVEmotes ||
+                !assets?.emote(next, roomId)?.zeroWidth
+            )
+                return null;
+            this.emojiSegments ||= new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+            const suffix = Array.from(this.emojiSegments.segment(text)).at(-1);
+            if (!suffix || !isEmoji(suffix.segment)) return null;
+            if (ChatWidget.linkParts(text).some((part) => part.domain)) return null;
+            const prefix = text.slice(0, suffix.index);
+            if (prefix) {
+                if (preview) this.appendMentions(node, prefix, provider, true);
+                else this.appendText(node, prefix, provider);
+            }
+            const emoji = suffix.segment;
+            const stack = document.createElement('span');
+            stack.className = 'emote-stack emoji-emote-stack';
+            stack.append(this.image(emojiURL(emoji), emoji, 'emote emoji-base', 0.625));
+            node.append(stack);
+            return stack;
         }
         previewText(node, text, quote) {
             const media = quote._previewMedia?.parts || [];
@@ -458,7 +532,9 @@
                 if (spaces) node.append(document.createTextNode(spaces));
                 spaces = '';
             };
-            for (const token of text.split(pattern)) {
+            const tokens = text.split(pattern);
+            for (let index = 0; index < tokens.length; index++) {
+                const token = tokens[index];
                 if (!token) continue;
                 if (/^\s+$/u.test(token)) {
                     spaces += token;
@@ -500,8 +576,17 @@
                     }
                 } else {
                     flush();
-                    this.appendMentions(node, token, 'twitch', true);
-                    base = null;
+                    const next = tokens[index + 1]?.trim() ? tokens[index + 1] : tokens[index + 2];
+                    base = this.emojiOverlayBase(
+                        node,
+                        token,
+                        next,
+                        assets,
+                        quote._previewRoom,
+                        'twitch',
+                        true
+                    );
+                    if (!base) this.appendMentions(node, token, 'twitch', true);
                 }
             }
             flush();
@@ -519,7 +604,8 @@
                 const index = quote._previewParts.findIndex((part) => {
                     if (
                         !part.classList.contains('link-label') &&
-                        !part.classList.contains('emote-stack')
+                        !part.classList.contains('emote-stack') &&
+                        !part.classList.contains('twemoji')
                     )
                         return false;
                     const rect = part.getBoundingClientRect();
@@ -673,7 +759,16 @@
         }
         subscriptionIcon(label, tags, sourceId = '') {
             if (!label) return;
-            label.replaceChildren(document.createTextNode(label._subscriptionText));
+            const parts = label._subscriptionText.split('\u0000name\u0000');
+            const content = label._subscriptionName
+                ? [
+                      document.createTextNode(parts[0]),
+                      label._subscriptionName,
+                      document.createTextNode(parts[1] || '')
+                  ]
+                : [document.createTextNode(label._subscriptionText)];
+            label.replaceChildren(...content);
+            if (label._gift) return;
             const assets = this.assetsFor('twitch', sourceId);
             const prime = tags['msg-param-sub-plan'] === 'Prime';
             const sourceRoom = tags['source-room-id'];
@@ -702,7 +797,7 @@
             if (src) {
                 const icon = this.image(src, '', 'subscription-icon');
                 icon.title = prime ? 'Prime Gaming' : badge.title || '';
-                label.replaceChildren(icon, document.createTextNode(label._subscriptionText));
+                label.replaceChildren(icon, ...content);
             }
         }
         badges(node, tags, sevenTVBadge = null, provider = 'twitch', sourceId = '') {
@@ -832,7 +927,9 @@
                     );
                     continue;
                 }
-                for (const token of part.text.split(/(\s+)/u)) {
+                const tokens = part.text.split(/(\s+)/u);
+                for (let index = 0; index < tokens.length; index++) {
+                    const token = tokens[index];
                     if (!token) {
                         continue;
                     }
@@ -868,8 +965,11 @@
                         emote(info, token);
                     } else {
                         flush();
-                        this.appendText(node, token, provider);
-                        base = null;
+                        const next = tokens[index + 1]?.trim()
+                            ? tokens[index + 1]
+                            : tokens[index + 2];
+                        base = this.emojiOverlayBase(node, token, next, assets, roomId, provider);
+                        if (!base) this.appendText(node, token, provider);
                     }
                 }
             }
@@ -884,6 +984,48 @@
                 image.src = presentation?.prefer2xEmotes ? info.src2x : info.src;
             }
         }
+        giftNotice(message) {
+            const tags = message.tags;
+            const kind = tags['msg-id'];
+            const batch = kind.endsWith('submysterygift');
+            const anonymous =
+                kind.startsWith('anon') || String(tags.login).toLowerCase() === 'ananonymousgifter';
+            const count = batch ? Number(tags['msg-param-mass-gift-count']) : 1;
+            if (!Number.isSafeInteger(count) || count < 1) return null;
+            const now = Date.now();
+            this.giftBatches ||= new Map();
+            for (const [key, entry] of this.giftBatches) {
+                if (entry.expires <= now) this.giftBatches.delete(key);
+            }
+            const key = JSON.stringify([
+                message.sourceId || '',
+                tags['source-room-id'] || tags['room-id'] || message.params[0],
+                anonymous ? 'anonymous' : tags['user-id'] || tags.login || tags['display-name'],
+                tags['msg-param-sub-plan'] || ''
+            ]);
+            const community = tags['msg-param-community-gift-id'];
+            if (batch) {
+                const pending = this.giftBatches.get(key)?.remaining || 0;
+                this.giftBatches.set(key, { remaining: pending + count, expires: now + 60000 });
+                while (this.giftBatches.size > 200)
+                    this.giftBatches.delete(this.giftBatches.keys().next().value);
+            } else {
+                // Non-zero community IDs identify batch recipients even if they arrive
+                // before the summary. Explicit zero identifies an independent gift.
+                const grouped = community && community !== '0';
+                const pending = this.giftBatches.get(key);
+                if (grouped || (!community && pending?.remaining > 0)) {
+                    if (pending?.remaining > 0) pending.remaining--;
+                    return null;
+                }
+            }
+            return {
+                count,
+                name: anonymous
+                    ? this.t('anonymousGifter')
+                    : tags['display-name'] || tags.login || ''
+            };
+        }
         add(message) {
             if (message.provider && message.provider !== 'twitch') {
                 return;
@@ -891,9 +1033,19 @@
             const provider = message.provider || 'twitch';
             const theme = ChatWidget.templates.get(this.config.template);
             const sourceId = message.sourceId || '';
+            const followHistory =
+                this.config.devPreserveOffscreenMessages === true &&
+                this.config.layout !== 'stack-top' &&
+                (this.root.scrollHeight - this.root.clientHeight - this.root.scrollTop <= 2 ||
+                    (this.historyPinned && this.root.scrollTop === this.historyScrollTop));
             const tags = message.tags;
             const subscription = message.command === 'USERNOTICE';
-            if (subscription && !['sub', 'resub'].includes(tags['msg-id'])) return;
+            const gift =
+                subscription &&
+                ['subgift', 'anonsubgift', 'submysterygift', 'anonsubmysterygift'].includes(
+                    tags['msg-id']
+                );
+            if (subscription && !gift && !['sub', 'resub'].includes(tags['msg-id'])) return;
             const login = (
                 subscription
                     ? tags.login || tags['display-name'] || ''
@@ -904,7 +1056,9 @@
                 ? ChatWidget.providerKey(provider, tags['source-id'])
                 : id;
             const now = Date.now();
-            const rawText = message.params[1] || '';
+            const rawText = gift ? '' : message.params[1] || '';
+            const classicSummary =
+                subscription && this.config.template === 'classic' && !rawText.trim();
             if (ChatWidget.hideMessage(this.config, login, rawText)) {
                 return;
             }
@@ -935,6 +1089,8 @@
             while (this.seen.size > 3000) {
                 this.seen.delete(this.seen.keys().next().value);
             }
+            const giftSummary = gift ? this.giftNotice(message) : null;
+            if (gift && !giftSummary) return;
             const assets = this.assetsFor(provider, sourceId);
             const sourceRoom = ChatWidget.sourceRoom(tags, assets?.channelId);
             if (subscription) assets?.enableSubscriptionBadges?.(sourceRoom);
@@ -996,7 +1152,46 @@
                               : 'subscriptionMonths'
                           : 'subscriptionRenewed';
                 label.textContent = this.t(heading + (plan ? 'Plan' : ''), { months, plan });
+                if (classicSummary) {
+                    row.classList.add('subscription-summary');
+                    label.textContent = this.t('subscriptionSummary', {
+                        name: '\u0000name\u0000',
+                        duration:
+                            Number.isSafeInteger(months) && months > 0
+                                ? this.t(
+                                      months === 1
+                                          ? 'subscriptionSummaryMonth'
+                                          : 'subscriptionSummaryMonths',
+                                      { months }
+                                  )
+                                : '',
+                        plan: plan ? this.t('subscriptionSummaryPlan', { plan }) : ''
+                    });
+                }
+                if (giftSummary) {
+                    label._gift = true;
+                    label.textContent = this.t(
+                        giftSummary.count === 1 ? 'subscriptionGift' : 'subscriptionGifts',
+                        { ...giftSummary, name: '\u0000name\u0000' }
+                    );
+                }
                 label._subscriptionText = label.textContent;
+                if (classicSummary) label._subscriptionName = name;
+                if (giftSummary) {
+                    const gifter = document.createElement('span');
+                    gifter.className = 'mention subscription-gifter';
+                    gifter.dataset.login = login;
+                    gifter.dataset.provider = provider;
+                    this.renderUsername(gifter, login, giftSummary.name);
+                    this.colorMention(gifter, userColor);
+                    if (this.config.showSevenTVPaints) {
+                        this.applyPaint(
+                            gifter,
+                            this.userPaints.get(ChatWidget.providerKey(provider, login)) || null
+                        );
+                    }
+                    label._subscriptionName = gifter;
+                }
                 row._subscriptionLabel = label;
                 this.subscriptionIcon(label, tags, sourceId);
                 row.append(label);
@@ -1004,7 +1199,7 @@
             body._chatChannel = String(message.params[0] || '')
                 .replace(/^#/, '')
                 .toLowerCase();
-            this.renderUsername(name, login, tags['display-name']);
+            this.renderUsername(name, login, giftSummary?.name || tags['display-name']);
             name.style.color = theme.authorColor?.(row, userColor, { hasUserColor }) || userColor;
             if (this.config.usernameGradient) {
                 name._basePaint = { backgroundImage: usernameGradient(userColor), filter: '' };
@@ -1061,11 +1256,17 @@
             }
             content.append(
                 badges,
-                name,
-                document.createTextNode(row.classList.contains('action') ? ' ' : ': '),
+                ...(classicSummary ? [] : [name]),
+                document.createTextNode(
+                    row.classList.contains('subscription-no-message')
+                        ? ''
+                        : row.classList.contains('action')
+                          ? ' '
+                          : ': '
+                ),
                 body
             );
-            row.append(content);
+            if (!classicSummary) row.append(content);
             if (name._basePaint) this.applyPaint(name, null);
             const record = {
                 row,
@@ -1085,6 +1286,7 @@
                 sourceId,
                 user: ChatWidget.providerKey(provider, tags['user-id'] || login),
                 login,
+                displayName: giftSummary?.name || tags['display-name'],
                 time: now
             };
             this.badges(badges, tags, null, provider, sourceId);
@@ -1095,10 +1297,17 @@
                 this.root.append(row);
             }
             this.rows.push(record);
-            while (this.rows.length > this.config.maxMessages) {
+            this.historyResize?.observe(row);
+            if (this.config.devPreserveOffscreenMessages === true)
+                this.historyPinned = followHistory;
+            while (
+                this.config.devPreserveOffscreenMessages !== true &&
+                this.rows.length > this.config.maxMessages
+            ) {
                 this.remove(this.rows[0]);
             }
             this.fit();
+            this.followHistoryBottom();
             this.resolveReply(record);
             if (
                 this.config.showSevenTVPaints ||
@@ -1214,6 +1423,10 @@
                     ? `calc(var(--reply-gap, 4px) + ${end}px)`
                     : end + 'px';
             }
+            if (this.config.devPreserveOffscreenMessages === true) {
+                this.followHistoryBottom();
+                return;
+            }
             const frame = this.root.getBoundingClientRect?.();
             const outsideFrame = () => {
                 if (!frame) return false;
@@ -1230,7 +1443,11 @@
         refresh() {
             for (const record of this.rows) {
                 if (record.name) {
-                    this.renderUsername(record.name, record.login, record.t['display-name']);
+                    this.renderUsername(
+                        record.name,
+                        record.login,
+                        record.displayName ?? record.t['display-name']
+                    );
                 }
                 if (record.reply?.quote) {
                     this.replyPreview(
@@ -1270,6 +1487,7 @@
         }
         remove(record) {
             this.clearExit(record);
+            this.historyResize?.unobserve(record.row);
             record.row.remove();
             const index = this.rows.indexOf(record);
             if (index >= 0) {
@@ -1442,6 +1660,8 @@
         }
         stop() {
             clearInterval(this.tick);
+            this.historyResize?.disconnect();
+            if (this.onHistoryScroll) this.root.removeEventListener('scroll', this.onHistoryScroll);
             for (const record of this.rows) {
                 this.clearExit(record);
             }

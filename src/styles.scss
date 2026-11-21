@@ -68,6 +68,18 @@ body {
     }
 }
 
+// Start-align overflow so older rows stay inside the scrollable range.
+// Auto margin keeps short histories at the bottom without negative flex overflow.
+body #chat.dev-preserve-history {
+    overflow: auto;
+    justify-content: flex-start;
+    overscroll-behavior: contain;
+
+    &:not(.top) > .message:first-child {
+        margin-top: auto;
+    }
+}
+
 .message {
     flex: 0 0 auto;
     display: flex;
@@ -110,7 +122,7 @@ body {
 
 .first-message-label {
     margin-bottom: 0.25em;
-    color: #e879f9;
+    color: var(--first-message-label-color, #d0acff);
     font-family: var(--text-font-family, inherit);
     font-size: 0.52em;
     font-weight: 700;
@@ -284,6 +296,21 @@ body {
             max-width: none;
         }
     }
+}
+
+.twemoji {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    object-fit: contain;
+    vertical-align: -0.15em;
+    text-shadow: none;
+}
+
+.emoji-base {
+    // 7TV renders the emoji at 20px under a 32px overlay.
+    height: calc(var(--emote-size) * 0.625);
+    align-self: center;
 }
 
 .chat-gif {

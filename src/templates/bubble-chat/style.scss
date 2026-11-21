@@ -141,8 +141,15 @@
         }
 
         &.first-message-background::before {
-            background: var(--first-message-background);
-            animation: none;
+            background: var(
+                    --first-message-gradient,
+                    linear-gradient(
+                        var(--first-message-background),
+                        var(--first-message-background)
+                    )
+                )
+                100% 100% / 900% 900%;
+            animation: highlight-gradient 5s linear infinite;
         }
     }
 
@@ -262,6 +269,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     #chat[data-template='bubble-chat'] .message.highlighted-message::before,
+    #chat[data-template='bubble-chat'] .message.first-message-background::before,
     #chat[data-template='bubble-chat'] .message.cheer-message::before {
         animation: none;
     }

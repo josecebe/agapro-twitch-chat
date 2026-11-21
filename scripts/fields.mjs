@@ -76,7 +76,8 @@ const specifications = {
     characterArtFilterMinRun: ['Minimum art run length', 'Filters', 8, 10000],
     characterArtFilterMinSimilarLines: ['Minimum similar rows', 'Filters', 3, 100],
     demo: ['Demo mode (no live chat)', 'Preview and diagnostics'],
-    debug: ['Show diagnostics', 'Preview and diagnostics']
+    debug: ['Show diagnostics', 'Preview and diagnostics'],
+    devPreserveOffscreenMessages: ['Dev: preserve offscreen messages', 'Preview and diagnostics']
 };
 
 function flatten(defaults, prefix = '') {

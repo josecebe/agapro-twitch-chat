@@ -52,19 +52,20 @@ test('local build embeds the application and loads a separate readable config', 
     assert.ok(Buffer.byteLength(html) - artworkBytes < 140 * 1024);
 });
 
-test('rebuilding can preserve local OBS settings and keeps the manifest accurate', async () => {
+test('rebuilding replaces local OBS settings from the root config and keeps the manifest accurate', async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), 'chat-widget-local-config-'));
     temporaryDirectories.push(directory);
-    await buildProject({ outputDirectory: directory, preserveLocalConfig: true });
+    await buildProject({ outputDirectory: directory });
     const file = path.join(directory, 'local/config.js');
     const customConfig =
         'window.CHAT_WIDGET_CONFIG = {sources:[{channel:"my-channel"}], template:"berserk", messageBackgroundOpacity:0.8};\n';
     await writeFile(file, customConfig);
-    const rebuilt = await buildProject({ outputDirectory: directory, preserveLocalConfig: true });
-    assert.equal(await readFile(file, 'utf8'), customConfig);
+    const rebuilt = await buildProject({ outputDirectory: directory });
+    const rootConfig = await readFile(path.join(projectRoot, 'config.js'), 'utf8');
+    assert.equal(await readFile(file, 'utf8'), rootConfig);
     assert.equal(
         rebuilt.manifest.files['local/config.js'].sha256,
-        createHash('sha256').update(customConfig).digest('hex')
+        createHash('sha256').update(rootConfig).digest('hex')
     );
 });
 

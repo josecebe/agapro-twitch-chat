@@ -18,7 +18,10 @@ export default function createPresentation(config) {
             }
             const count = node.querySelectorAll('.emote-stack').length;
             const onlyEmotes =
-                count > 0 && !node.textContent.trim() && !node.querySelector('.chat-gif');
+                count > 0 &&
+                !node.textContent.trim() &&
+                !node.querySelector('.chat-gif') &&
+                !node.querySelector('.twemoji');
             node.style.setProperty(
                 '--berserk-emote-scale',
                 String(

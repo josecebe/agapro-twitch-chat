@@ -1,16 +1,20 @@
-$gradient: linear-gradient(
-    -45deg,
-    #ffadaddd,
-    #ffd6a5dd,
-    #fdffb6dd,
-    #caffbfdd,
-    #9bf6ffdd,
-    #a0c4ffdd,
-    #bdb2ffdd,
-    #ffc6ffdd,
-    #ffadaddd,
-    #ffd6a5dd
-);
+@function gradient($opacity: 0.8666666667) {
+    @return linear-gradient(
+        -45deg,
+        rgba(#ffadad, $opacity),
+        rgba(#ffd6a5, $opacity),
+        rgba(#fdffb6, $opacity),
+        rgba(#caffbf, $opacity),
+        rgba(#9bf6ff, $opacity),
+        rgba(#a0c4ff, $opacity),
+        rgba(#bdb2ff, $opacity),
+        rgba(#ffc6ff, $opacity),
+        rgba(#ffadad, $opacity),
+        rgba(#ffd6a5, $opacity)
+    );
+}
+
+$gradient: gradient();
 
 @mixin background {
     background: $gradient 100% 100% / 900% 900%;

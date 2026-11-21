@@ -215,6 +215,29 @@ test('7TV demo quotes preserve resolved tokens, including overlays and missing t
     controller.stop();
 });
 
+test('first-message gradients derive nearby shades from the configured color and preserve opacity', () => {
+    const { widget } = fixture();
+    const gradient = widget.firstMessageGradient('rgba(151,71,255,0.35)');
+    assert.ok(gradient.includes('rgba(174,111,255,0.35)'));
+    assert.ok(gradient.includes('rgba(151,71,255,0.35)'));
+    assert.ok(gradient.includes('rgba(118,55,199,0.35)'));
+    assert.equal((gradient.match(/,0\.35\)/g) || []).length, 5);
+    assert.ok(widget.firstMessageGradient('#00ff00').includes('rgba(0,255,0,1)'));
+    assert.equal((widget.firstMessageGradient('transparent').match(/,0\)/g) || []).length, 5);
+    assert.equal(
+        widget.firstMessageGradient('invalid'),
+        widget.firstMessageGradient('rgba(151,71,255,0.55)')
+    );
+});
+
+test('first-message labels use an opaque lighter shade of the configured background', () => {
+    const { widget } = fixture();
+    assert.equal(widget.firstMessageLabelColor('rgba(151,71,255,0.35)'), 'rgba(208,172,255,1)');
+    assert.equal(widget.firstMessageLabelColor('rgba(151,71,255,0)'), 'rgba(208,172,255,1)');
+    assert.equal(widget.firstMessageLabelColor('#00ff00'), 'rgba(140,255,140,1)');
+    assert.equal(widget.firstMessageLabelColor('invalid'), 'rgba(208,172,255,1)');
+});
+
 test('color resolution preserves picker alpha, supports hex alpha, and rejects invalid colors', () => {
     const { widget } = fixture();
     assert.equal(widget.resolveColor('rgba(12, 34, 56, 0.35)').css, 'rgba(12,34,56,0.35)');

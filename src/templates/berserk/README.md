@@ -56,8 +56,8 @@ controls the texture and its shadow together. Text, emotes and the sword remain
 opaque. **Background color** applies to solid-background templates and does not
 tint this texture.
 
-Highlighted messages and messages with Bits overlay the shared animated color gradient on the same
-texture and mask. Only the gradient moves; the native texture crop stays fixed.
+Highlighted messages and messages with Bits overlay the shared animated color gradient
+at 50% opacity on the same blood texture and mask. Only the gradient moves; the native texture crop stays fixed.
 First-message background color takes priority when both notices apply, and
 reduced motion keeps the highlight static.
 
@@ -66,6 +66,12 @@ add a 50% animated color overlay masked to the sword
 artwork, with badges and nickname above the tint. The subscription's warm-white heading sits inside
 the blood panel. Notices without a viewer message use equal top and bottom
 padding and no trailing heading gap. Reduced motion keeps the sword tint static.
+
+When first-message backgrounds are enabled, the sword uses the same configured
+first-message color and opacity as the blood panel. Both animate a gradient of
+lighter and darker shades of that color, keeping the configured hue and alpha.
+This gradient takes priority when a first message also has a special highlight.
+Reduced motion keeps it static.
 
 `--berserk-shape-shadow` supplies the same single shadow for the complete sword
 and the complete bubble. The bubble has one decorative outer layer to let the

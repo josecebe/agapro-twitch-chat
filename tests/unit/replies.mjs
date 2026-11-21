@@ -220,7 +220,7 @@ await test('Quotes combine Twitch and 7TV emotes, GIF labels and neutral mention
         assert.equal(quote.querySelectorAll('.chat-gif').length, 0);
         assert.equal(quote.querySelectorAll('.mention')[0].style.color, undefined);
         assert.equal(quote.querySelectorAll('.mention')[0].classList.contains('painted'), false);
-        assert.ok(quote.textContent.includes('😀'));
+        assert.equal(quote.querySelectorAll('.twemoji')[0].alt, '😀');
     };
     check();
     r.rememberColor('alice', 'Alice', '#ff0000');

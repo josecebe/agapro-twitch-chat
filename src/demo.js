@@ -216,6 +216,33 @@
             ...[
                 ['subscription-new', '', { 'msg-id': 'sub', 'msg-param-sub-plan': '1000' }],
                 [
+                    'subscription-gift-batch',
+                    '',
+                    {
+                        'msg-id': 'submysterygift',
+                        'msg-param-mass-gift-count': '20',
+                        'msg-param-sub-plan': '1000'
+                    }
+                ],
+                [
+                    'subscription-gift-single',
+                    '',
+                    {
+                        'msg-id': 'subgift',
+                        'msg-param-community-gift-id': '0',
+                        'msg-param-sub-plan': '1000'
+                    }
+                ],
+                [
+                    'subscription-gift-anonymous',
+                    '',
+                    {
+                        'msg-id': 'anonsubmysterygift',
+                        'msg-param-mass-gift-count': '5',
+                        'msg-param-sub-plan': '1000'
+                    }
+                ],
+                [
                     'subscription-resub',
                     'Kappa ' + t('demoReply'),
                     {

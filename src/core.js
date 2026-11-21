@@ -45,6 +45,30 @@
         if (explicitOpacity) color[3] = ChatWidget.clamp(opacity, 0, 1, 0.3);
         return colorResult(color);
     };
+    ChatWidget.firstMessageGradient = function (value) {
+        const color = parseColor(value) || [151, 71, 255, 0.55];
+        const shade = (amount) =>
+            colorResult(
+                color.map((channel, index) =>
+                    index === 3
+                        ? channel
+                        : Math.round(
+                              amount > 0
+                                  ? channel + (255 - channel) * amount
+                                  : channel * (1 + amount)
+                          )
+                )
+            ).css;
+        return `linear-gradient(-45deg,${shade(0.22)},${shade(0)},${shade(-0.22)},${shade(0)},${shade(0.22)})`;
+    };
+    ChatWidget.firstMessageLabelColor = function (value) {
+        const color = parseColor(value) || [151, 71, 255, 0.55];
+        // Use the gradient's white-mixing approach with a stronger lift for text.
+        const channels = color
+            .slice(0, 3)
+            .map((channel) => Math.round(channel + (255 - channel) * 0.55));
+        return colorResult([...channels, 1]).css;
+    };
     ChatWidget.messageProviders = {
         twitch: {
             name: 'Twitch',

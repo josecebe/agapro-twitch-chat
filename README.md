@@ -98,7 +98,7 @@ See the [Streamlabs Custom Widget guide](https://support.streamlabs.com/hc/en-us
 
 ## 5. Use and customize
 
-For the local version, edit `dist/local/config.js`, save it, and use **Refresh cache of current page** in the OBS source properties. `npm run build` preserves this file when it already exists.
+For the local version, edit the root `config.js`, run `npm run build`, and use **Refresh cache of current page** in the OBS source properties. Each build overwrites `dist/local/config.js` with the root configuration. You can edit the generated file for temporary changes, but the next build replaces them.
 
 For StreamElements, change the widget settings and save the overlay.
 
@@ -127,15 +127,20 @@ You can adjust fonts, text/emote/badge sizes, colors, backgrounds, shadows, mess
 - **Mentions:** `colorMentions` applies nick colors and enabled 7TV paints to `@username` and to whole usernames written without `@` when the widget already knows the user. Matching ignores case; unknown bare names stay as ordinary text. Emotes take priority over name highlighting.
 - **Actions (`/me`):** action text uses the author's Twitch color and equipped 7TV paint when enabled in all templates. Berserk keeps text paints separate from the blood background and first-message notice.
 - **Highlighted messages:** Twitch highlighted messages use the same animated pastel gradient in all three templates. Classic displays it in a box with the same border and corners as first messages; Berserk overlays it on its blood texture and mask. Reduced-motion settings keep the gradient static.
+- **First-message backgrounds:** Classic, Bubble Chat and Berserk animate lighter and darker shades of the configured first-message color while retaining its opacity. Berserk applies the same gradient to the sword. Reduced motion keeps the gradient static; disabling first-message backgrounds removes this effect.
 - **Subscriptions:** shared Twitch `sub` and `resub` chat notices show a subscription heading, cumulative months for resubs, and Prime or tier when provided, followed by the viewer's optional message and emotes. Headings show the official Prime Gaming crown or the exact channel subscriber badge sent by Twitch, including tier flair when present. These icons appear independently of username badge visibility and update when badge assets arrive; unavailable icons leave the text intact. All three templates highlight the background; Berserk keeps its sword and blood panel. Demo mode includes a new subscription and resubs with and without a message. Automatic renewals without a chat notice are not detected.
+- **Gift subscriptions:** community gifts show one localized summary with the gifter and number of subscriptions. Associated recipient notices are suppressed using Twitch's community gift ID, with a short-lived per-donor/channel count fallback for notices without that ID. Standalone gifts show one subscription; anonymous gifts use an anonymous name. Gift summaries share the subscription background and Berserk sword highlight without listing recipients or using the donor's subscriber badge as a gift-tier icon. Demo mode includes a batch of 20, a standalone gift and an anonymous batch.
 - **GIFs:** `showTwitchGifs: true` displays images. With `false`, they appear as a `GIF` label.
+- **Emoji and 7TV overlays:** all emoji use Twemoji artwork in messages and reply previews, including flags, skin tones, joined sequences and newer emoji missing from system fonts. This works independently of Twitch/7TV emote visibility. Zero-width 7TV emotes can overlay the preceding emoji; ordinary emoji stay at text size. Failed images restore the original emoji text.
 - **Fonts:** local font families must be installed on the OBS computer. Use the Google Font settings to load an online font instead.
 
-`npm run build` preserves an existing `dist/local/config.js`. Root `config.js` supplies defaults for new local installations and the hosted exports.
+`npm run build` regenerates all widget outputs, including `dist/local/config.js`, from source. Root `config.js` supplies the configuration for local installations and the hosted exports.
 
 ### Preview and connection status
 
 Open `demo.html` to preview sample messages, or enable `demo: true` in local configuration. In StreamElements, enable **Demo mode**. Disable the demo to return to live chat.
+
+For development, set `devPreserveOffscreenMessages: true` (or enable **Preview and diagnostics / Dev: preserve offscreen messages** in StreamElements) to keep rows in the DOM, ignore `maxMessages` and scroll through the full history. With bottom-stacked messages, new arrivals follow the latest message only while you are already at the bottom; scrolling up lets you read older messages without jumping back down. Layout and spacing still update normally. `messageLifetimeSeconds` and moderation still apply. It defaults to `false` and works with every template, in live chat and demo mode.
 
 Open `diagnostics.html` or enable `debug: true` to display connection status and errors. In StreamElements, enable **Show diagnostics**. Disable diagnostics before broadcasting so the panel is not visible in your scene.
 

@@ -61,5 +61,6 @@
     "characterArtFilterMinRun": 80,
     "characterArtFilterMinSimilarLines": 4,
     "demo": "false",
-    "debug": "false"
+    "debug": "false",
+    "devPreserveOffscreenMessages": "false"
 }

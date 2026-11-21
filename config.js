@@ -121,5 +121,8 @@ window.CHAT_WIDGET_CONFIG = {
 
     // Preview and diagnostics
     demo: false,
+    // Development: keep offscreen rows in the DOM for inspection.
+    // Also ignores maxMessages; messageLifetimeSeconds and moderation still apply.
+    devPreserveOffscreenMessages: false,
     debug: false
 };
