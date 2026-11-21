@@ -187,6 +187,28 @@ await test('Quoted mentions render alongside links and survive refreshes', () =>
         }
     }
 });
+await test('Reply previews preserve the original messages 7TV interpretation across catalog changes', () => {
+    const r = fixture({ showSevenTVEmotes: true });
+    const catalog = new Map();
+    r.assets.emote = (name) => catalog.get(name);
+    r.add(message('before-new-emote', {}, 'NewEmote'));
+    catalog.set('NewEmote', { id: 'new', src: 'https://cdn.7tv.app/emote/new/1x.webp', ratio: 1 });
+    r.add(
+        message('reply-after-addition', {
+            ...targetTags,
+            'reply-parent-msg-id': 'before-new-emote',
+            'reply-parent-msg-body': 'NewEmote'
+        })
+    );
+    const quote = r.rows[1].reply.quote;
+    assert.equal(quote.querySelectorAll('.emote').length, 0);
+    assert.ok(quote.textContent.includes('NewEmote'));
+    r.refresh();
+    assert.equal(quote.querySelectorAll('.emote').length, 0);
+    r.add(message('new-message', {}, 'NewEmote'));
+    assert.equal(r.rows[2].body.querySelectorAll('.emote')[0].alt, 'NewEmote');
+});
+
 await test('Quotes combine Twitch and 7TV emotes, GIF labels and neutral mentions', () => {
     const r = fixture({ showTwitchEmotes: true, showSevenTVEmotes: true, showSevenTVPaints: true });
     r.assets.emote = (token) =>

@@ -445,6 +445,9 @@
         replyPreview(quote, text, chatChannel = '') {
             quote._previewMedia =
                 this.replyMedia?.get(quote._previewParentId) || quote._previewMedia;
+            if (!quote._sevenTVSnapshot && quote._previewMedia?.sevenTVEmotes) {
+                quote._sevenTVSnapshot = { cache: new Map(quote._previewMedia.sevenTVEmotes) };
+            }
             quote._previewRoom = quote._previewMedia?.roomId || quote._previewRoom;
             quote.replaceChildren();
             quote._previewParts = [];
@@ -484,6 +487,24 @@
             ellipsis.hidden = true;
             quote._previewEllipsis = ellipsis;
             quote.append(ellipsis);
+        }
+        emoteSnapshot(node, assets, key) {
+            if (
+                !node._sevenTVSnapshot ||
+                (key !== undefined && node._sevenTVSnapshot.key !== key)
+            ) {
+                node._sevenTVSnapshot = { key, cache: new Map() };
+            }
+            const cache = node._sevenTVSnapshot.cache;
+            return {
+                emote(name, roomId) {
+                    if (!cache.has(name)) {
+                        const emote = assets?.emote?.(name, roomId);
+                        cache.set(name, emote ? { ...emote } : null);
+                    }
+                    return cache.get(name);
+                }
+            };
         }
         emojiOverlayBase(node, text, next, assets, roomId, provider = 'twitch', preview = false) {
             if (
@@ -525,7 +546,10 @@
                     ')',
                 'gu'
             );
-            const assets = this.assetsFor('twitch', quote._previewSourceId || '');
+            const assets = this.emoteSnapshot(
+                quote,
+                this.assetsFor('twitch', quote._previewSourceId || '')
+            );
             let base = null;
             let spaces = '';
             const flush = () => {
@@ -865,6 +889,11 @@
             if (!roomId) {
                 roomId = assets?.channelId;
             }
+            const emoteAssets = this.emoteSnapshot(
+                node,
+                assets,
+                JSON.stringify([text, provider, sourceId])
+            );
             let remainingBits =
                 /^[1-9]\d*$/.test(String(bits)) && Number.isSafeInteger(Number(bits))
                     ? Number(bits)
@@ -959,7 +988,7 @@
                         continue;
                     }
                     const info = this.config.showSevenTVEmotes
-                        ? assets?.emote(token, roomId)
+                        ? emoteAssets.emote(token, roomId)
                         : null;
                     if (info) {
                         emote(info, token);
@@ -968,7 +997,14 @@
                         const next = tokens[index + 1]?.trim()
                             ? tokens[index + 1]
                             : tokens[index + 2];
-                        base = this.emojiOverlayBase(node, token, next, assets, roomId, provider);
+                        base = this.emojiOverlayBase(
+                            node,
+                            token,
+                            next,
+                            emoteAssets,
+                            roomId,
+                            provider
+                        );
                         if (!base) this.appendText(node, token, provider);
                     }
                 }
@@ -1291,6 +1327,8 @@
             };
             this.badges(badges, tags, null, provider, sourceId);
             this.body(body, text, emotes, tags.bits, sourceRoom, provider, sourceId, gifs);
+            const media = this.replyMedia?.get(id);
+            if (media) media.sevenTVEmotes = body._sevenTVSnapshot?.cache;
             if (this.config.layout === 'stack-top') {
                 this.root.prepend(row);
             } else {

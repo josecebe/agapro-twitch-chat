@@ -633,10 +633,11 @@ test('Shared Chat renders immediately and requests the origin channel assets', (
 const sourcePending = sourceAssets.sourceChannels.get('200').pending;
 releaseSource();
 await sourcePending;
-test('Shared Chat asset arrival updates existing badges and 7TV emotes', () => {
+test('Shared Chat asset arrival updates badges without retroactively converting text to emotes', () => {
     const row = sharedRenderer.rows[0];
     assert.equal(row.badges.children[0].title, 'Sub de origen, 6 meses');
-    assert.equal(row.body.querySelectorAll('.emote-stack').length, 2);
+    assert.equal(row.body.querySelectorAll('.emote-stack').length, 1);
+    assert.ok(row.body.textContent.includes('ALIAS'));
     assert.equal(sourceAssets.channelId, '100');
 });
 sharedRenderer.add({
@@ -1657,5 +1658,31 @@ test('Offscreen messages remain available up to maxMessages when newer messages 
         assert.equal(renderer.root.children.length, 2);
         assert.ok(renderer.root.children.includes(renderer.rows[0].row));
     }
+});
+test('7TV catalog changes apply to new messages while old messages keep their original emotes and text', () => {
+    const renderer = firstMessageRenderer({ showSevenTVEmotes: true });
+    const old = { id: 'old', src: 'https://cdn.7tv.app/emote/old/1x.webp', ratio: 1 };
+    const catalog = new Map([['Known', old]]);
+    renderer.assets.emote = (name) => catalog.get(name);
+    const add = (id) => {
+        const value = firstMessage(id);
+        value.params[1] = 'New Known';
+        renderer.add(value);
+    };
+    add('before-catalog-update');
+    assert.equal(renderer.rows[0].body.querySelectorAll('.emote')[0].alt, 'Known');
+    catalog.clear();
+    catalog.set('New', { id: 'new', src: 'https://cdn.7tv.app/emote/new/1x.webp', ratio: 1 });
+    old.src = 'https://cdn.7tv.app/emote/changed/1x.webp';
+    renderer.refresh();
+    const previous = renderer.rows[0].body;
+    assert.equal(previous.textContent, 'New ');
+    assert.equal(
+        previous.querySelectorAll('.emote')[0].src,
+        'https://cdn.7tv.app/emote/old/1x.webp'
+    );
+    add('after-catalog-update');
+    assert.equal(renderer.rows[1].body.textContent, ' Known');
+    assert.equal(renderer.rows[1].body.querySelectorAll('.emote')[0].alt, 'New');
 });
 console.log(`${count} tests PASS`);
